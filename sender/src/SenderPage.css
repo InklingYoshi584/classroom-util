@@ -741,6 +741,59 @@
   color: var(--text-secondary);
 }
 
+.msg-template-lock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.msg-template-preview {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  background: var(--bg);
+  padding: 8px 12px;
+  border-radius: 6px;
+  word-break: break-all;
+}
+
+.msg-template-unlock-row {
+  display: flex;
+  gap: 8px;
+}
+
+.msg-pin-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: var(--bg);
+}
+
+.msg-pin-input:focus {
+  border-color: var(--primary);
+}
+
+.msg-unlock-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.msg-unlock-btn:hover {
+  background: var(--primary-dark);
+}
+
+.msg-pin-error {
+  font-size: 0.8rem;
+  color: var(--error);
+}
+
 /* ── PIN in confirm dialog ── */
 .pin-row {
   display: flex;

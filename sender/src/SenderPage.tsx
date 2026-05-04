@@ -29,6 +29,9 @@ export function SenderPage() {
   const [activeTab, setActiveTab] = useState<'students' | 'custom'>('students');
   const [customText, setCustomText] = useState('');
   const [customConfirmOpen, setCustomConfirmOpen] = useState(false);
+  const [msgTemplateUnlocked, setMsgTemplateUnlocked] = useState(false);
+  const [msgPin, setMsgPin] = useState('');
+  const [msgPinError, setMsgPinError] = useState('');
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -261,6 +264,17 @@ export function SenderPage() {
     refreshPinInfo();
   };
 
+  const handleMsgTemplateUnlock = async () => {
+    const ok = await verifyPin(msgPin);
+    if (ok) {
+      setMsgTemplateUnlocked(true);
+      setMsgPin('');
+      setMsgPinError('');
+    } else {
+      setMsgPinError('PIN 错误');
+    }
+  };
+
   const statusLabel: Record<MqttStatus, string> = {
     disconnected: '未连接',
     connecting: '连接中...',
@@ -275,7 +289,7 @@ export function SenderPage() {
     <div className="sender-page">
       <div className="sender-header">
         <h1>Classroom Caller · 发送端</h1>
-        <button className="settings-gear-btn" onClick={() => setShowSettings(!showSettings)} title="设置">
+        <button className="settings-gear-btn" onClick={() => { setMsgTemplateUnlocked(false); setMsgPin(''); setMsgPinError(''); setShowSettings(!showSettings); }} title="设置">
           &#9881;
         </button>
       </div>
@@ -358,8 +372,12 @@ export function SenderPage() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
 
-              <div className="msg-template-label">消息模板</div>
+          <div className="msg-template-label">消息模板</div>
+          {msgTemplateUnlocked ? (
+            <>
               <input
                 type="text"
                 className="msg-template-input"
@@ -371,6 +389,27 @@ export function SenderPage() {
                 }}
               />
               <span className="msg-template-hint">{'{name}'} = 学生姓名</span>
+            </>
+          ) : (
+            <div className="msg-template-lock">
+              <span className="msg-template-preview">当前: {msgTemplate}</span>
+              <div className="msg-template-unlock-row">
+                <input
+                  type="text"
+                  className="msg-pin-input"
+                  placeholder="输入 PIN 以更改消息模板"
+                  value={msgPin}
+                  onChange={(e) => {
+                    setMsgPin(e.target.value);
+                    setMsgPinError('');
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleMsgTemplateUnlock()}
+                />
+                <button className="msg-unlock-btn" onClick={handleMsgTemplateUnlock}>
+                  验证
+                </button>
+              </div>
+              {msgPinError && <div className="msg-pin-error">{msgPinError}</div>}
             </div>
           )}
         </div>
