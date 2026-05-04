@@ -160,6 +160,81 @@
   background: #374151 !important;
 }
 
+/* ── Tabs ── */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 0;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* ── Custom message ── */
+.custom-message-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.custom-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+.custom-textarea:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.custom-send-btn {
+  padding: 10px 24px;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.custom-send-btn:hover {
+  background: var(--primary-dark);
+}
+
+.custom-send-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
 .student-list {
   flex: 1;
   overflow-y: auto;

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef, useId } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createMqttClient, MqttClientHandle, MqttStatus, CallMessage } from './lib/mqtt';
-import { buildCallMessage, renderTemplate } from './lib/template';
+import { buildCallMessage, buildCustomMessage, renderTemplate } from './lib/template';
 import { loadClassId, saveClassId, loadStudents, saveStudents, loadMessageTemplate, saveMessageTemplate, DEFAULT_MSG_TEMPLATE } from './lib/store';
 import { getPinStatus, verifyPin, setPin, removePin, listPins } from './lib/pin';
 import { parseStudentCsv } from './lib/csv';
@@ -26,10 +26,12 @@ export function SenderPage() {
   const [sudoNewPin, setSudoNewPin] = useState('');
   const [sudoError, setSudoError] = useState('');
   const [pinList, setPinList] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'students' | 'custom'>('students');
+  const [customText, setCustomText] = useState('');
+  const [customConfirmOpen, setCustomConfirmOpen] = useState(false);
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
-  const csvInputId = useId();
 
   useEffect(() => {
     const mqtt = createMqttClient();
@@ -152,14 +154,50 @@ export function SenderPage() {
       setToast({ msg: '发送失败，检查连接状态', error: true });
     }
     setConfirmStudent(null);
+    setCustomConfirmOpen(false);
     setPinInput('');
     setPinError('');
   };
 
   const handleCancelConfirm = () => {
     setConfirmStudent(null);
+    setCustomConfirmOpen(false);
     setPinInput('');
     setPinError('');
+  };
+
+  const handleCustomConfirm = async () => {
+    const text = customText.trim();
+    if (!text) return;
+    if (pinSet) {
+      const ok = await verifyPin(pinInput);
+      if (!ok) {
+        setPinError('PIN 错误');
+        return;
+      }
+    }
+    const raw = buildCustomMessage(text);
+    const msg: CallMessage = JSON.parse(raw);
+    const ok = mqttRef.current?.publish(msg);
+    if (ok) {
+      setToast({ msg: '已发送自定义消息' });
+      setHistory((h) => [{ name: '自定义', time: msg.time }, ...h].slice(0, 20));
+      setCustomText('');
+    } else {
+      setToast({ msg: '发送失败，检查连接状态', error: true });
+    }
+    setCustomConfirmOpen(false);
+    setPinInput('');
+    setPinError('');
+  };
+
+  const handleCustomKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey && customText.trim()) {
+      e.preventDefault();
+      setPinInput('');
+      setPinError('');
+      setCustomConfirmOpen(true);
+    }
   };
 
   // ── Sudo flow ──
@@ -353,78 +391,120 @@ export function SenderPage() {
 
       {classIdTrimmed && (
         <>
-          <div className="add-student">
-            <input
-              type="text"
-              placeholder="新增学生姓名"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={handleAddKeyDown}
-            />
-            <button onClick={handleAdd} disabled={!newName.trim()}>
-              + 添加
+          <div className="tab-bar">
+            <button
+              className={`tab-btn ${activeTab === 'students' ? 'active' : ''}`}
+              onClick={() => setActiveTab('students')}
+            >
+              学生呼叫
             </button>
-            <button className="csv-import-btn" onClick={() => csvInputRef.current?.click()} title="CSV 导入">
-              CSV
+            <button
+              className={`tab-btn ${activeTab === 'custom' ? 'active' : ''}`}
+              onClick={() => setActiveTab('custom')}
+            >
+              自定义消息
             </button>
-            <input
-              ref={csvInputRef}
-              type="file"
-              accept=".csv,.txt"
-              style={{ display: 'none' }}
-              onChange={handleCsvImport}
-            />
           </div>
 
-          <div className="student-list">
-            {students.length === 0 && (
-              <div className="student-list-empty">暂无学生，请先添加</div>
-            )}
-            {students.map((name, idx) => (
-              <div
-                key={`${idx}-${name}`}
-                className="student-card"
-                onClick={() => handleStudentClick(name)}
-              >
-                <span className="index">{idx + 1}</span>
-                {editingIdx === idx ? (
-                  <input
-                    className="name-input"
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    onBlur={() => handleEditSave(idx)}
-                    onKeyDown={(e) => handleEditKeyDown(e, idx)}
-                    autoFocus
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ) : (
-                  <span className="name">{name}</span>
-                )}
-                <div className="actions">
-                  <button
-                    className="edit-btn"
-                    title="编辑"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditStart(idx);
-                    }}
-                  >
-                    &#9998;
-                  </button>
-                  <button
-                    className="delete-btn"
-                    title="删除"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(idx);
-                    }}
-                  >
-                    &#10005;
-                  </button>
-                </div>
+          {activeTab === 'students' ? (
+            <>
+              <div className="add-student">
+                <input
+                  type="text"
+                  placeholder="新增学生姓名"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onKeyDown={handleAddKeyDown}
+                />
+                <button onClick={handleAdd} disabled={!newName.trim()}>
+                  + 添加
+                </button>
+                <button className="csv-import-btn" onClick={() => csvInputRef.current?.click()} title="CSV 导入">
+                  CSV
+                </button>
+                <input
+                  ref={csvInputRef}
+                  type="file"
+                  accept=".csv,.txt"
+                  style={{ display: 'none' }}
+                  onChange={handleCsvImport}
+                />
               </div>
-            ))}
-          </div>
+
+              <div className="student-list">
+                {students.length === 0 && (
+                  <div className="student-list-empty">暂无学生，请先添加</div>
+                )}
+                {students.map((name, idx) => (
+                  <div
+                    key={`${idx}-${name}`}
+                    className="student-card"
+                    onClick={() => handleStudentClick(name)}
+                  >
+                    <span className="index">{idx + 1}</span>
+                    {editingIdx === idx ? (
+                      <input
+                        className="name-input"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={() => handleEditSave(idx)}
+                        onKeyDown={(e) => handleEditKeyDown(e, idx)}
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <span className="name">{name}</span>
+                    )}
+                    <div className="actions">
+                      <button
+                        className="edit-btn"
+                        title="编辑"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditStart(idx);
+                        }}
+                      >
+                        &#9998;
+                      </button>
+                      <button
+                        className="delete-btn"
+                        title="删除"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(idx);
+                        }}
+                      >
+                        &#10005;
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="custom-message-section">
+              <textarea
+                className="custom-textarea"
+                placeholder="输入自定义消息内容..."
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                onKeyDown={handleCustomKeyDown}
+                rows={4}
+              />
+              <button
+                className="custom-send-btn"
+                onClick={() => {
+                  if (!customText.trim() || !isConnected) return;
+                  setPinInput('');
+                  setPinError('');
+                  setCustomConfirmOpen(true);
+                }}
+                disabled={!customText.trim() || !isConnected}
+              >
+                {isConnected ? '发送' : '未连接'}
+              </button>
+            </div>
+          )}
         </>
       )}
 
@@ -441,12 +521,16 @@ export function SenderPage() {
         </div>
       )}
 
-      {confirmStudent && (
+      {(confirmStudent || customConfirmOpen) && (
         <div className="overlay" onClick={handleCancelConfirm}>
           <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
             <h2>确认呼叫</h2>
-            <div className="student-name-highlight">{confirmStudent}</div>
-            <div className="preview-text">{renderTemplate(msgTemplate, { name: confirmStudent })}</div>
+            <div className="student-name-highlight">{confirmStudent || '自定义消息'}</div>
+            <div className="preview-text">
+              {confirmStudent
+                ? renderTemplate(msgTemplate, { name: confirmStudent })
+                : customText}
+            </div>
             {pinSet && (
               <div className="pin-row">
                 <input
@@ -458,7 +542,7 @@ export function SenderPage() {
                     setPinInput(e.target.value);
                     setPinError('');
                   }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmSend()}
+                  onKeyDown={(e) => e.key === 'Enter' && (confirmStudent ? handleConfirmSend() : handleCustomConfirm())}
                   autoFocus
                 />
                 {pinError && <div className="pin-error">{pinError}</div>}
@@ -470,7 +554,7 @@ export function SenderPage() {
               </button>
               <button
                 className="confirm-btn"
-                onClick={handleConfirmSend}
+                onClick={confirmStudent ? handleConfirmSend : handleCustomConfirm}
                 disabled={!isConnected}
               >
                 {isConnected ? '确认呼叫' : '未连接'}
