@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { createMqttClient, MqttClientHandle, MqttStatus, CallMessage } from './lib/mqtt';
 import { buildCallMessage, renderTemplate } from './lib/template';
 import { loadClassId, saveClassId, loadStudents, saveStudents, loadMessageTemplate, saveMessageTemplate, DEFAULT_MSG_TEMPLATE } from './lib/store';
+import { getPinStatus, verifyPin, setPin, removePin, listPins } from './lib/pin';
 import './SenderPage.css';
 
 export function SenderPage() {
@@ -15,6 +16,15 @@ export function SenderPage() {
   const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
   const [history, setHistory] = useState<{ name: string; time: string }[]>([]);
   const [msgTemplate, setMsgTemplate] = useState(() => loadMessageTemplate());
+  const [pinSet, setPinSet] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [sudoAuthed, setSudoAuthed] = useState(false);
+  const [sudoPassword, setSudoPassword] = useState('');
+  const [sudoNewPin, setSudoNewPin] = useState('');
+  const [sudoError, setSudoError] = useState('');
+  const [pinList, setPinList] = useState<string[]>([]);
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
 
@@ -32,6 +42,10 @@ export function SenderPage() {
       mqtt.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    getPinStatus().then(setPinSet);
   }, []);
 
   const handleConnect = useCallback(() => {
@@ -90,10 +104,19 @@ export function SenderPage() {
 
   const handleStudentClick = (name: string) => {
     setConfirmStudent(name);
+    setPinInput('');
+    setPinError('');
   };
 
-  const handleConfirmSend = () => {
+  const handleConfirmSend = async () => {
     if (!confirmStudent) return;
+    if (pinSet) {
+      const ok = await verifyPin(pinInput);
+      if (!ok) {
+        setPinError('PIN 错误');
+        return;
+      }
+    }
     const raw = buildCallMessage(confirmStudent, msgTemplate);
     const msg: CallMessage = JSON.parse(raw);
     const ok = mqttRef.current?.publish(msg);
@@ -104,10 +127,75 @@ export function SenderPage() {
       setToast({ msg: '发送失败，检查连接状态', error: true });
     }
     setConfirmStudent(null);
+    setPinInput('');
+    setPinError('');
   };
 
   const handleCancelConfirm = () => {
     setConfirmStudent(null);
+    setPinInput('');
+    setPinError('');
+  };
+
+  // ── Sudo flow ──
+  const refreshPinInfo = async () => {
+    setPinSet(await getPinStatus());
+    if (sudoAuthed) {
+      setPinList(await listPins(sudoPassword));
+    }
+  };
+
+  const handleSudoVerify = async () => {
+    try {
+      const res = await fetch('/api/sudo/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sudo: sudoPassword }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setSudoAuthed(true);
+        setSudoError('');
+        const list = await listPins(sudoPassword);
+        setPinList(list);
+        setPinSet(list.length > 0);
+      } else {
+        setSudoError('Sudo 密码错误');
+      }
+    } catch {
+      setSudoError('网络错误');
+    }
+  };
+
+  const handleAddPin = async () => {
+    if (!sudoNewPin.trim()) return;
+    const result = await setPin(sudoPassword, sudoNewPin.trim());
+    if (result.ok) {
+      setSudoNewPin('');
+      setSudoError('');
+      await refreshPinInfo();
+    } else {
+      setSudoError(result.error || '添加失败');
+    }
+  };
+
+  const handleDeletePin = async (pin: string) => {
+    const result = await removePin(sudoPassword, pin);
+    if (result.ok) {
+      setSudoError('');
+      await refreshPinInfo();
+    } else {
+      setSudoError(result.error || '删除失败');
+    }
+  };
+
+  const handleSudoLogout = () => {
+    setSudoAuthed(false);
+    setSudoPassword('');
+    setSudoNewPin('');
+    setSudoError('');
+    setPinList([]);
+    refreshPinInfo();
   };
 
   const statusLabel: Record<MqttStatus, string> = {
@@ -124,12 +212,106 @@ export function SenderPage() {
     <div className="sender-page">
       <div className="sender-header">
         <h1>Classroom Caller · 发送端</h1>
+        <button className="settings-gear-btn" onClick={() => setShowSettings(!showSettings)} title="设置">
+          &#9881;
+        </button>
       </div>
 
       <div className={`connection-bar ${status}`}>
         <span className="status-dot" />
         <span>{statusLabel[status]}</span>
       </div>
+
+      {showSettings && (
+        <div className="settings-panel">
+          <div className="settings-panel-header">
+            <h3>设置</h3>
+            <button className="close-btn" onClick={() => setShowSettings(false)}>&#10005;</button>
+          </div>
+
+          <div className="pin-status-row">
+            <span>PIN 数量:</span>
+            <span className={pinSet ? 'pin-active' : 'pin-inactive'}>
+              {pinList.length} 个
+            </span>
+          </div>
+
+          {!sudoAuthed ? (
+            <div className="sudo-section">
+              <label>Sudo 密码</label>
+              <input
+                type="password"
+                placeholder="输入 Sudo 密码"
+                value={sudoPassword}
+                onChange={(e) => {
+                  setSudoPassword(e.target.value);
+                  setSudoError('');
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && handleSudoVerify()}
+              />
+              {sudoError && <div className="sudo-error">{sudoError}</div>}
+              <button className="sudo-btn" onClick={handleSudoVerify}>
+                验证
+              </button>
+            </div>
+          ) : (
+            <div className="sudo-authed-section">
+              <div className="sudo-authed-header">
+                <span className="sudo-authed-badge">Sudo 模式</span>
+                <button className="logout-btn" onClick={handleSudoLogout}>
+                  退出
+                </button>
+              </div>
+
+              <div className="add-pin-row">
+                <input
+                  type="text"
+                  placeholder="输入新 PIN"
+                  value={sudoNewPin}
+                  onChange={(e) => setSudoNewPin(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddPin()}
+                />
+                <button onClick={handleAddPin} disabled={!sudoNewPin.trim()}>
+                  + 添加
+                </button>
+              </div>
+              {sudoError && <div className="sudo-error">{sudoError}</div>}
+
+              <div className="pin-list-label">已有 PIN</div>
+              {pinList.length === 0 ? (
+                <div className="pin-list-empty">暂无 PIN</div>
+              ) : (
+                <div className="pin-list">
+                  {pinList.map((pin) => (
+                    <div key={pin} className="pin-list-item">
+                      <span className="pin-value">{pin}</span>
+                      <button
+                        className="delete-pin-btn"
+                        onClick={() => handleDeletePin(pin)}
+                      >
+                        &#10005;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="msg-template-label">消息模板</div>
+              <input
+                type="text"
+                className="msg-template-input"
+                placeholder={DEFAULT_MSG_TEMPLATE}
+                value={msgTemplate}
+                onChange={(e) => {
+                  setMsgTemplate(e.target.value);
+                  saveMessageTemplate(e.target.value);
+                }}
+              />
+              <span className="msg-template-hint">{'{name}'} = 学生姓名</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="class-selector">
         <input
@@ -146,19 +328,6 @@ export function SenderPage() {
 
       {classIdTrimmed && (
         <>
-          <div className="msg-template">
-            <input
-              type="text"
-              placeholder={DEFAULT_MSG_TEMPLATE}
-              value={msgTemplate}
-              onChange={(e) => {
-                setMsgTemplate(e.target.value);
-                saveMessageTemplate(e.target.value);
-              }}
-            />
-            <span className="msg-template-hint">{'{name}'} = 学生姓名</span>
-          </div>
-
           <div className="add-student">
             <input
               type="text"
@@ -243,6 +412,23 @@ export function SenderPage() {
             <h2>确认呼叫</h2>
             <div className="student-name-highlight">{confirmStudent}</div>
             <div className="preview-text">{renderTemplate(msgTemplate, { name: confirmStudent })}</div>
+            {pinSet && (
+              <div className="pin-row">
+                <input
+                  type="text"
+                  className="pin-input"
+                  placeholder="输入 PIN"
+                  value={pinInput}
+                  onChange={(e) => {
+                    setPinInput(e.target.value);
+                    setPinError('');
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmSend()}
+                  autoFocus
+                />
+                {pinError && <div className="pin-error">{pinError}</div>}
+              </div>
+            )}
             <div className="buttons">
               <button className="cancel-btn" onClick={handleCancelConfirm}>
                 取消

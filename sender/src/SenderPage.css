@@ -113,33 +113,6 @@
   cursor: not-allowed;
 }
 
-.msg-template {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.msg-template input {
-  flex: 1;
-  padding: 10px 14px;
-  border: 2px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-card);
-  font-size: 0.92rem;
-  transition: border-color 0.15s;
-}
-
-.msg-template input:focus {
-  border-color: var(--primary);
-}
-
-.msg-template-hint {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
 .add-student {
   display: flex;
   gap: 8px;
@@ -438,4 +411,288 @@
   to {
     opacity: 0;
   }
+}
+
+/* ── Settings panel ── */
+.settings-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-panel-header h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--border);
+  color: var(--text);
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.close-btn:hover {
+  background: #d1d5db;
+}
+
+.pin-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.pin-active {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.pin-inactive {
+  color: var(--text-secondary);
+}
+
+.sudo-btn {
+  padding: 8px 18px;
+  border-radius: 6px;
+  background: #1f2937;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.sudo-btn:hover {
+  background: #374151;
+}
+
+.sudo-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sudo-section label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.sudo-section input {
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: var(--bg);
+}
+
+.sudo-section input:focus {
+  border-color: var(--primary);
+}
+
+.sudo-error {
+  font-size: 0.8rem;
+  color: var(--error);
+}
+
+/* ── Sudo authed mode ── */
+.sudo-authed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.sudo-authed-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: #1f2937;
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+
+.logout-btn {
+  font-size: 0.8rem;
+  color: var(--error);
+  background: none;
+  font-weight: 600;
+}
+
+.logout-btn:hover {
+  text-decoration: underline;
+}
+
+.add-pin-row {
+  display: flex;
+  gap: 8px;
+}
+
+.add-pin-row input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: var(--bg);
+}
+
+.add-pin-row input:focus {
+  border-color: var(--primary);
+}
+
+.add-pin-row button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.add-pin-row button:hover {
+  background: var(--primary-dark);
+}
+
+.add-pin-row button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.pin-list-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.pin-list-empty {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding: 8px 0;
+}
+
+.pin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pin-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+.pin-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.delete-pin-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  background: #fee2e2;
+  color: var(--error);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  transition: background 0.15s;
+}
+
+.delete-pin-btn:hover {
+  background: #fecaca;
+}
+
+.msg-template-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.msg-template-input {
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: var(--bg);
+}
+
+.msg-template-input:focus {
+  border-color: var(--primary);
+}
+
+.msg-template-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ── PIN in confirm dialog ── */
+.pin-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.pin-input {
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  text-align: center;
+  background: var(--bg);
+}
+
+.pin-input:focus {
+  border-color: var(--primary);
+}
+
+.pin-error {
+  font-size: 0.8rem;
+  color: var(--error);
+  text-align: center;
+}
+
+/* ── Settings gear button ── */
+.settings-gear-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  font-size: 1.2rem;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.settings-gear-btn:hover {
+  background: var(--border);
+  transform: rotate(30deg);
 }

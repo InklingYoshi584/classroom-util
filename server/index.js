@@ -17,7 +17,75 @@ const os = require('os');
 const app = express();
 const broker = aedes();
 
-// Serve sender SPA if built, otherwise show status page
+// ── PIN state (multiple PINs) ──
+const pinSet = new Set();
+
+// ── JSON body parser (must come before routes) ──
+app.use(express.json());
+
+// ── CORS (receiver / frontend dev on different ports) ──
+app.use((_req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  if (_req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
+// ── PIN API routes ──
+app.get('/api/pin/status', (_req, res) => {
+  res.json({ set: pinSet.size > 0 });
+});
+
+app.post('/api/sudo/verify', (req, res) => {
+  const { sudo } = req.body || {};
+  res.json({ ok: sudo === 'Yoshi1024' });
+});
+
+app.post('/api/pin/verify', (req, res) => {
+  const { pin } = req.body || {};
+  if (pinSet.size === 0) return res.json({ ok: true });
+  res.json({ ok: pinSet.has(pin) });
+});
+
+app.post('/api/pin/list', (req, res) => {
+  const { sudo } = req.body || {};
+  if (sudo !== 'Yoshi1024') {
+    return res.status(403).json({ ok: false, error: 'Sudo 密码错误' });
+  }
+  res.json({ pins: [...pinSet] });
+});
+
+app.post('/api/pin/set', (req, res) => {
+  const { sudo, pin } = req.body || {};
+  if (sudo !== 'Yoshi1024') {
+    return res.status(403).json({ ok: false, error: 'Sudo 密码错误' });
+  }
+  if (!pin || typeof pin !== 'string' || !pin.trim()) {
+    return res.status(400).json({ ok: false, error: 'PIN 不能为空' });
+  }
+  const trimmed = pin.trim();
+  if (pinSet.has(trimmed)) {
+    return res.status(409).json({ ok: false, error: 'PIN 已存在' });
+  }
+  pinSet.add(trimmed);
+  console.log(`[PIN] added: ${trimmed} (total: ${pinSet.size})`);
+  res.json({ ok: true });
+});
+
+app.post('/api/pin/remove', (req, res) => {
+  const { sudo, pin } = req.body || {};
+  if (sudo !== 'Yoshi1024') {
+    return res.status(403).json({ ok: false, error: 'Sudo 密码错误' });
+  }
+  if (!pin || !pinSet.has(pin)) {
+    return res.status(400).json({ ok: false, error: 'PIN 不存在' });
+  }
+  pinSet.delete(pin);
+  console.log(`[PIN] removed: ${pin} (total: ${pinSet.size})`);
+  res.json({ ok: true });
+});
+
+// ── Serve sender SPA ──
 const hasSender = fs.existsSync(SENDER_DIR);
 
 if (hasSender) {

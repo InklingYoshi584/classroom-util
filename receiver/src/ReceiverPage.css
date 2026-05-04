@@ -438,3 +438,101 @@
   font-size: 0.85rem;
   margin-bottom: 12px;
 }
+
+/* ── PIN gate dialog ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.15s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pin-gate-dialog {
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 24px;
+  width: 90%;
+  max-width: 340px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  animation: scaleIn 0.2s;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.pin-gate-dialog h3 {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.pin-gate-dialog p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.pin-gate-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 1rem;
+  text-align: center;
+  background: var(--bg);
+  margin-bottom: 8px;
+}
+
+.pin-gate-input:focus {
+  border-color: var(--primary);
+}
+
+.pin-gate-error {
+  font-size: 0.8rem;
+  color: var(--error);
+  margin-bottom: 8px;
+}
+
+.pin-gate-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.pin-gate-buttons button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+.pin-gate-buttons .cancel-btn {
+  background: var(--border);
+  color: var(--text);
+}
+
+.pin-gate-buttons .cancel-btn:hover {
+  background: #d1d5db;
+}
+
+.pin-gate-buttons .confirm-btn {
+  background: var(--primary);
+  color: #fff;
+}
+
+.pin-gate-buttons .confirm-btn:hover {
+  background: var(--primary-dark);
+}

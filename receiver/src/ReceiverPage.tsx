@@ -3,6 +3,7 @@ import { createMqttClient, MqttClientHandle, MqttStatus, CallMessage } from './l
 import { renderTemplate, previewTemplate } from './lib/template';
 import { loadTtsSettings, saveTtsSettings, TtsSettings, DEFAULT_TTS } from './lib/store';
 import { ttsEngine } from './lib/tts';
+import { getPinStatus, verifyPin } from './lib/pin';
 import './ReceiverPage.css';
 
 const CLASS_KEY = 'classroom-receiver-class';
@@ -18,6 +19,10 @@ export function ReceiverPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const [pinRequired, setPinRequired] = useState(false);
+  const [pinVerified, setPinVerified] = useState(false);
+  const [gatePinInput, setGatePinInput] = useState('');
+  const [gatePinError, setGatePinError] = useState('');
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
   const seenIdsRef = useRef<Set<string>>(new Set());
@@ -111,6 +116,49 @@ export function ReceiverPage() {
     ttsEngine.speak(text, { ...ttsSettingsRef.current, enabled: true });
   };
 
+  const handleToggleSettings = async () => {
+    if (showSettings) {
+      setShowSettings(false);
+      return;
+    }
+    const host = serverHostRef.current.trim();
+    const result = await getPinStatus(host);
+    if (result === 'error') {
+      setGatePinError('无法连接到服务器，请检查服务器地址');
+      setPinRequired(true);
+      return;
+    }
+    if (result === 'set' && !pinVerified) {
+      setPinRequired(true);
+      setGatePinInput('');
+      setGatePinError('');
+      return;
+    }
+    setShowSettings(true);
+  };
+
+  const handleGatePinSubmit = async () => {
+    const host = serverHostRef.current.trim();
+    const result = await verifyPin(host, gatePinInput);
+    if (result === 'ok') {
+      setPinVerified(true);
+      setPinRequired(false);
+      setShowSettings(true);
+      setGatePinInput('');
+      setGatePinError('');
+    } else if (result === 'wrong') {
+      setGatePinError('PIN 错误');
+    } else {
+      setGatePinError('无法连接到服务器，请检查服务器地址');
+    }
+  };
+
+  const handleGatePinCancel = () => {
+    setPinRequired(false);
+    setGatePinInput('');
+    setGatePinError('');
+  };
+
   const statusLabel: Record<MqttStatus, string> = {
     disconnected: '未连接',
     connecting: '连接中...',
@@ -171,7 +219,7 @@ export function ReceiverPage() {
             启用语音
           </button>
         )}
-        <button className="settings-toggle-btn" onClick={() => setShowSettings(!showSettings)}>
+        <button className="settings-toggle-btn" onClick={handleToggleSettings}>
           {showSettings ? '收起设置' : 'TTS 设置'}
         </button>
       </div>
@@ -308,6 +356,32 @@ export function ReceiverPage() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {pinRequired && (
+        <div className="overlay" onClick={handleGatePinCancel}>
+          <div className="pin-gate-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>需要 PIN 验证</h3>
+            <p>请输入 PIN 以访问设置</p>
+            <input
+              type="text"
+              className="pin-gate-input"
+              placeholder="输入 PIN"
+              value={gatePinInput}
+              onChange={(e) => {
+                setGatePinInput(e.target.value);
+                setGatePinError('');
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && handleGatePinSubmit()}
+              autoFocus
+            />
+            {gatePinError && <div className="pin-gate-error">{gatePinError}</div>}
+            <div className="pin-gate-buttons">
+              <button className="cancel-btn" onClick={handleGatePinCancel}>取消</button>
+              <button className="confirm-btn" onClick={handleGatePinSubmit}>确认</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
