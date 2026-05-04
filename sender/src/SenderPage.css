@@ -1,0 +1,414 @@
+.sender-page {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sender-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+}
+
+.sender-header h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+.connection-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.connection-bar .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.connection-bar.connected {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.connection-bar.connected .status-dot {
+  background: var(--success);
+}
+
+.connection-bar.disconnected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.connection-bar.disconnected .status-dot {
+  background: var(--error);
+}
+
+.connection-bar.connecting {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.connection-bar.connecting .status-dot {
+  background: var(--warning);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.class-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.class-selector input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  transition: border-color 0.15s;
+}
+
+.class-selector input:focus {
+  border-color: var(--primary);
+}
+
+.class-selector button {
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.class-selector button:hover {
+  background: var(--primary-dark);
+}
+
+.class-selector button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.add-student {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.add-student input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+}
+
+.add-student input:focus {
+  border-color: var(--primary);
+}
+
+.add-student button {
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  background: var(--success);
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.add-student button:hover {
+  background: #059669;
+}
+
+.student-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.student-list-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 40px 0;
+  font-size: 0.95rem;
+}
+
+.student-card {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.15s;
+  gap: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.student-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.student-card:active {
+  transform: scale(0.98);
+}
+
+.student-card .index {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.student-card .name {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-card .name-input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 2px solid var(--primary);
+  border-radius: 6px;
+  font-size: 1rem;
+  min-width: 0;
+}
+
+.student-card .actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.student-card .actions button {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.student-card .actions .edit-btn {
+  background: #dbeafe;
+  color: var(--primary);
+}
+
+.student-card .actions .edit-btn:hover {
+  background: #bfdbfe;
+}
+
+.student-card .actions .delete-btn {
+  background: #fee2e2;
+  color: var(--error);
+}
+
+.student-card .actions .delete-btn:hover {
+  background: #fecaca;
+}
+
+.sender-history {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.sender-history h3 {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sender-history .history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 0.9rem;
+}
+
+.sender-history .history-item .check {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.sender-history .history-item .time {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-left: auto;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.15s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.confirm-dialog {
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 24px;
+  width: 90%;
+  max-width: 360px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  animation: scaleIn 0.2s;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.confirm-dialog h2 {
+  font-size: 1.15rem;
+  margin-bottom: 6px;
+}
+
+.confirm-dialog .student-name-highlight {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.confirm-dialog .preview-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.confirm-dialog .buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.confirm-dialog .buttons button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.15s;
+}
+
+.confirm-dialog .buttons .cancel-btn {
+  background: var(--border);
+  color: var(--text);
+}
+
+.confirm-dialog .buttons .cancel-btn:hover {
+  background: #d1d5db;
+}
+
+.confirm-dialog .buttons .confirm-btn {
+  background: var(--primary);
+  color: #fff;
+}
+
+.confirm-dialog .buttons .confirm-btn:hover {
+  background: var(--primary-dark);
+}
+
+.send-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--success);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  z-index: 200;
+  animation: toastIn 0.3s, toastOut 0.3s 2.5s forwards;
+}
+
+.send-toast.error {
+  background: var(--error);
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

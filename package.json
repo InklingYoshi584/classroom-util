@@ -1,0 +1,15 @@
+{
+  "name": "classroom-util",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix sender install && npm --prefix receiver install",
+    "build:sender": "npm --prefix sender run build",
+    "build:receiver": "npm --prefix receiver run build",
+    "build": "npm run build:sender && npm run build:receiver",
+    "dev:sender": "npm --prefix sender run dev",
+    "dev:receiver": "npm --prefix receiver run dev",
+    "server": "npm --prefix server start",
+    "start": "npm run install:all && npm run build && npm run server"
+  }
+}
