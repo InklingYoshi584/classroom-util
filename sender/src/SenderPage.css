@@ -113,6 +113,33 @@
   cursor: not-allowed;
 }
 
+.msg-template {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.msg-template input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  font-size: 0.92rem;
+  transition: border-color 0.15s;
+}
+
+.msg-template input:focus {
+  border-color: var(--primary);
+}
+
+.msg-template-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 .add-student {
   display: flex;
   gap: 8px;

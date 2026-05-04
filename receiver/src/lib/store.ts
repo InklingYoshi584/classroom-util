@@ -7,7 +7,7 @@ export interface TtsSettings {
   enabled: boolean;
 }
 
-const DEFAULT_TEMPLATE = '请 {name} 同学到前台';
+const DEFAULT_TEMPLATE = '{message}';
 
 export const DEFAULT_TTS: TtsSettings = {
   template: DEFAULT_TEMPLATE,

@@ -1,5 +1,8 @@
 const CLASS_KEY = 'classroom-sender-class';
 const STUDENTS_KEY_PREFIX = 'classroom-students-';
+const MSG_TEMPLATE_KEY = 'classroom-sender-msg-template';
+
+export const DEFAULT_MSG_TEMPLATE = '请 {name} 同学到前台';
 
 export function loadClassId(): string {
   return localStorage.getItem(CLASS_KEY) || '';
@@ -7,6 +10,14 @@ export function loadClassId(): string {
 
 export function saveClassId(id: string) {
   localStorage.setItem(CLASS_KEY, id);
+}
+
+export function loadMessageTemplate(): string {
+  return localStorage.getItem(MSG_TEMPLATE_KEY) || DEFAULT_MSG_TEMPLATE;
+}
+
+export function saveMessageTemplate(template: string) {
+  localStorage.setItem(MSG_TEMPLATE_KEY, template);
 }
 
 export function loadStudents(classId: string): string[] {

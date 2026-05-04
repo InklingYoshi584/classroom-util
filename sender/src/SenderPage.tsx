@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createMqttClient, MqttClientHandle, MqttStatus, CallMessage } from './lib/mqtt';
-import { buildCallMessage } from './lib/template';
-import { loadClassId, saveClassId, loadStudents, saveStudents } from './lib/store';
+import { buildCallMessage, renderTemplate } from './lib/template';
+import { loadClassId, saveClassId, loadStudents, saveStudents, loadMessageTemplate, saveMessageTemplate, DEFAULT_MSG_TEMPLATE } from './lib/store';
 import './SenderPage.css';
 
 export function SenderPage() {
@@ -14,6 +14,7 @@ export function SenderPage() {
   const [status, setStatus] = useState<MqttStatus>('disconnected');
   const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
   const [history, setHistory] = useState<{ name: string; time: string }[]>([]);
+  const [msgTemplate, setMsgTemplate] = useState(() => loadMessageTemplate());
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
 
@@ -93,7 +94,7 @@ export function SenderPage() {
 
   const handleConfirmSend = () => {
     if (!confirmStudent) return;
-    const raw = buildCallMessage(confirmStudent);
+    const raw = buildCallMessage(confirmStudent, msgTemplate);
     const msg: CallMessage = JSON.parse(raw);
     const ok = mqttRef.current?.publish(msg);
     if (ok) {
@@ -145,6 +146,19 @@ export function SenderPage() {
 
       {classIdTrimmed && (
         <>
+          <div className="msg-template">
+            <input
+              type="text"
+              placeholder={DEFAULT_MSG_TEMPLATE}
+              value={msgTemplate}
+              onChange={(e) => {
+                setMsgTemplate(e.target.value);
+                saveMessageTemplate(e.target.value);
+              }}
+            />
+            <span className="msg-template-hint">{'{name}'} = 学生姓名</span>
+          </div>
+
           <div className="add-student">
             <input
               type="text"
@@ -228,7 +242,7 @@ export function SenderPage() {
           <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
             <h2>确认呼叫</h2>
             <div className="student-name-highlight">{confirmStudent}</div>
-            <div className="preview-text">请 {confirmStudent} 同学到前台</div>
+            <div className="preview-text">{renderTemplate(msgTemplate, { name: confirmStudent })}</div>
             <div className="buttons">
               <button className="cancel-btn" onClick={handleCancelConfirm}>
                 取消
