@@ -17,8 +17,35 @@ const os = require('os');
 const app = express();
 const broker = aedes();
 
-// ── PIN state (multiple PINs) ──
-const pinSet = new Set();
+// ── File persistence ──
+const DATA_FILE = path.join(__dirname, 'data.json');
+
+function loadData() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    }
+  } catch (e) {
+    console.error('[DATA] Failed to load:', e.message);
+  }
+  return {};
+}
+
+function saveData(data) {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {
+    console.error('[DATA] Failed to save:', e.message);
+  }
+}
+
+function persist() {
+  saveData({ pins: [...pinSet], students: studentsMap });
+}
+
+const persisted = loadData();
+const pinSet = new Set(persisted.pins || []);
+const studentsMap = persisted.students || {};
 
 // ── JSON body parser (must come before routes) ──
 app.use(express.json());
@@ -68,6 +95,7 @@ app.post('/api/pin/set', (req, res) => {
     return res.status(409).json({ ok: false, error: 'PIN 已存在' });
   }
   pinSet.add(trimmed);
+  persist();
   console.log(`[PIN] added: ${trimmed} (total: ${pinSet.size})`);
   res.json({ ok: true });
 });
@@ -81,7 +109,25 @@ app.post('/api/pin/remove', (req, res) => {
     return res.status(400).json({ ok: false, error: 'PIN 不存在' });
   }
   pinSet.delete(pin);
+  persist();
   console.log(`[PIN] removed: ${pin} (total: ${pinSet.size})`);
+  res.json({ ok: true });
+});
+
+// ── Students API ──
+app.get('/api/students', (req, res) => {
+  const cls = req.query.class || '';
+  res.json({ students: studentsMap[cls] || [] });
+});
+
+app.post('/api/students/set', (req, res) => {
+  const { class: cls, students } = req.body || {};
+  if (!cls || !Array.isArray(students)) {
+    return res.status(400).json({ ok: false, error: '参数错误' });
+  }
+  studentsMap[cls] = students;
+  persist();
+  console.log(`[DATA] students for ${cls}: ${students.length} names`);
   res.json({ ok: true });
 });
 

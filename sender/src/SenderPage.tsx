@@ -35,7 +35,7 @@ export function SenderPage() {
 
     if (classId) {
       mqtt.connect(classId);
-      setStudents(loadStudents(classId));
+      loadStudents(classId).then(setStudents);
     }
 
     return () => {
@@ -52,7 +52,7 @@ export function SenderPage() {
     const trimmed = classId.trim();
     if (!trimmed) return;
     saveClassId(trimmed);
-    setStudents(loadStudents(trimmed));
+    loadStudents(trimmed).then(setStudents);
     mqttRef.current?.connect(trimmed);
   }, [classId]);
 

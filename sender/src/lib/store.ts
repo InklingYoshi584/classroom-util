@@ -20,15 +20,26 @@ export function saveMessageTemplate(template: string) {
   localStorage.setItem(MSG_TEMPLATE_KEY, template);
 }
 
-export function loadStudents(classId: string): string[] {
+export async function loadStudents(classId: string): Promise<string[]> {
   try {
-    const raw = localStorage.getItem(`${STUDENTS_KEY_PREFIX}${classId}`);
-    return raw ? JSON.parse(raw) : [];
+    const res = await fetch(`/api/students?class=${encodeURIComponent(classId)}`);
+    const data = await res.json();
+    return data.students || [];
   } catch {
     return [];
   }
 }
 
-export function saveStudents(classId: string, students: string[]) {
-  localStorage.setItem(`${STUDENTS_KEY_PREFIX}${classId}`, JSON.stringify(students));
+export async function saveStudents(classId: string, students: string[]): Promise<boolean> {
+  try {
+    const res = await fetch('/api/students/set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ class: classId, students }),
+    });
+    const data = await res.json();
+    return data.ok === true;
+  } catch {
+    return false;
+  }
 }

@@ -7,9 +7,8 @@
     "build:sender": "npm --prefix sender run build",
     "build:receiver": "npm --prefix receiver run build",
     "build": "npm run build:sender && npm run build:receiver",
-    "dev:sender": "npm --prefix sender run dev",
-    "dev:receiver": "npm --prefix receiver run dev",
     "server": "npm --prefix server start",
+    "dev": "npx -y concurrently -n server,sender,receiver -c blue,green,magenta \"npm run server\" \"npm --prefix sender run dev\" \"npm --prefix receiver run dev\"",
     "start": "npm run install:all && npm run build && npm run server"
   }
 }
