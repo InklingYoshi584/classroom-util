@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useId } from 'react';
 import { createMqttClient, MqttClientHandle, MqttStatus, CallMessage } from './lib/mqtt';
 import { buildCallMessage, renderTemplate } from './lib/template';
 import { loadClassId, saveClassId, loadStudents, saveStudents, loadMessageTemplate, saveMessageTemplate, DEFAULT_MSG_TEMPLATE } from './lib/store';
 import { getPinStatus, verifyPin, setPin, removePin, listPins } from './lib/pin';
+import { parseStudentCsv } from './lib/csv';
 import './SenderPage.css';
 
 export function SenderPage() {
@@ -27,6 +28,8 @@ export function SenderPage() {
   const [pinList, setPinList] = useState<string[]>([]);
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const csvInputId = useId();
 
   useEffect(() => {
     const mqtt = createMqttClient();
@@ -92,6 +95,28 @@ export function SenderPage() {
     const updated = students.filter((_, i) => i !== idx);
     setStudents(updated);
     saveStudents(classId.trim() || 'default', updated);
+  };
+
+  const handleCsvImport = () => {
+    const file = csvInputRef.current?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const names = parseStudentCsv(reader.result as string);
+      if (names.length === 0) {
+        setToast({ msg: 'CSV 文件中未找到学生姓名', error: true });
+        return;
+      }
+      const updated = [...students, ...names];
+      setStudents(updated);
+      saveStudents(classIdTrimmed, updated);
+      setToast({ msg: `已导入 ${names.length} 名学生` });
+    };
+    reader.onerror = () => {
+      setToast({ msg: 'CSV 文件读取失败', error: true });
+    };
+    reader.readAsText(file);
+    csvInputRef.current.value = '';
   };
 
   const handleAddKeyDown = (e: React.KeyboardEvent) => {
@@ -339,6 +364,16 @@ export function SenderPage() {
             <button onClick={handleAdd} disabled={!newName.trim()}>
               + 添加
             </button>
+            <button className="csv-import-btn" onClick={() => csvInputRef.current?.click()} title="CSV 导入">
+              CSV
+            </button>
+            <input
+              ref={csvInputRef}
+              type="file"
+              accept=".csv,.txt"
+              style={{ display: 'none' }}
+              onChange={handleCsvImport}
+            />
           </div>
 
           <div className="student-list">

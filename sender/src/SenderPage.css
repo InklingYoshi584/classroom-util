@@ -145,6 +145,21 @@
   background: #059669;
 }
 
+.csv-import-btn {
+  padding: 10px 16px !important;
+  border-radius: var(--radius);
+  background: #1f2937 !important;
+  color: #fff !important;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.csv-import-btn:hover {
+  background: #374151 !important;
+}
+
 .student-list {
   flex: 1;
   overflow-y: auto;
