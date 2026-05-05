@@ -4,6 +4,7 @@ import { renderTemplate, previewTemplate } from './lib/template';
 import { loadTtsSettings, saveTtsSettings, TtsSettings, DEFAULT_TTS } from './lib/store';
 import { ttsEngine } from './lib/tts';
 import { getPinStatus, verifyPin } from './lib/pin';
+import { HomeworkTracker } from './HomeworkTracker';
 import './ReceiverPage.css';
 
 const CLASS_KEY = 'classroom-receiver-class';
@@ -23,6 +24,7 @@ export function ReceiverPage() {
   const [pinVerified, setPinVerified] = useState(false);
   const [gatePinInput, setGatePinInput] = useState('');
   const [gatePinError, setGatePinError] = useState('');
+  const [activeTab, setActiveTab] = useState<'receive' | 'homework'>('receive');
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
   const seenIdsRef = useRef<Set<string>>(new Set());
@@ -209,9 +211,22 @@ export function ReceiverPage() {
         </button>
       </div>
 
-      {!ttsEngine.isAvailable() && (
-        <div className="audio-warning">您的浏览器不支持语音合成，部分功能不可用。</div>
+      {classIdTrimmed && (
+        <div className="tab-bar">
+          <button className={`tab-btn ${activeTab === 'receive' ? 'active' : ''}`} onClick={() => setActiveTab('receive')}>
+            接收
+          </button>
+          <button className={`tab-btn ${activeTab === 'homework' ? 'active' : ''}`} onClick={() => setActiveTab('homework')}>
+            作业
+          </button>
+        </div>
       )}
+
+      {activeTab === 'receive' ? (
+        <>
+          {!ttsEngine.isAvailable() && (
+            <div className="audio-warning">您的浏览器不支持语音合成，部分功能不可用。</div>
+          )}
 
       <div className="top-actions">
         {!audioUnlocked && (
@@ -383,6 +398,10 @@ export function ReceiverPage() {
             </div>
           </div>
         </div>
+      )}
+        </>
+      ) : (
+        <HomeworkTracker classId={classIdTrimmed} serverHost={serverHost.trim()} />
       )}
     </div>
   );
