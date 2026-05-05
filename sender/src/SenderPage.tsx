@@ -7,7 +7,9 @@ import { parseStudentCsv } from './lib/csv';
 import './SenderPage.css';
 
 export function SenderPage() {
-  const [classId, setClassId] = useState(() => loadClassId());
+  const initialClassId = loadClassId();
+  const [classId, setClassId] = useState(initialClassId);
+  const [connectedClass, setConnectedClass] = useState(initialClassId);
   const [students, setStudents] = useState<string[]>([]);
   const [newName, setNewName] = useState('');
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
@@ -43,6 +45,7 @@ export function SenderPage() {
 
     if (classId) {
       mqtt.connect(classId);
+      setConnectedClass(classId);
       loadStudents(classId).then(setStudents);
     }
 
@@ -60,6 +63,8 @@ export function SenderPage() {
     const trimmed = classId.trim();
     if (!trimmed) return;
     saveClassId(trimmed);
+    setConnectedClass(trimmed);
+    setStudents([]);
     loadStudents(trimmed).then(setStudents);
     mqttRef.current?.connect(trimmed);
   }, [classId]);
@@ -69,7 +74,7 @@ export function SenderPage() {
     if (!name) return;
     const updated = [...students, name];
     setStudents(updated);
-    saveStudents(classId.trim() || 'default', updated);
+    saveStudents(connectedClass, updated);
     setNewName('');
   };
 
@@ -87,7 +92,7 @@ export function SenderPage() {
     const updated = [...students];
     updated[idx] = name;
     setStudents(updated);
-    saveStudents(classId.trim() || 'default', updated);
+    saveStudents(connectedClass, updated);
     setEditingIdx(null);
   };
 
@@ -99,7 +104,7 @@ export function SenderPage() {
   const handleDelete = (idx: number) => {
     const updated = students.filter((_, i) => i !== idx);
     setStudents(updated);
-    saveStudents(classId.trim() || 'default', updated);
+    saveStudents(connectedClass, updated);
   };
 
   const handleCsvImport = () => {
@@ -114,7 +119,7 @@ export function SenderPage() {
       }
       const updated = [...students, ...names];
       setStudents(updated);
-      saveStudents(classIdTrimmed, updated);
+      saveStudents(connectedClass, updated);
       setToast({ msg: `已导入 ${names.length} 名学生` });
     };
     reader.onerror = () => {
@@ -428,7 +433,7 @@ export function SenderPage() {
         </button>
       </div>
 
-      {classIdTrimmed && (
+      {connectedClass && (
         <>
           <div className="tab-bar">
             <button
