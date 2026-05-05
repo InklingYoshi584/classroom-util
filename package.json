@@ -2,6 +2,7 @@
   "name": "classroom-util",
   "version": "1.0.0",
   "private": true,
+  "license": "AGPL-3.0",
   "scripts": {
     "install:all": "npm --prefix server install && npm --prefix sender install && npm --prefix receiver install",
     "build:sender": "npm --prefix sender run build",

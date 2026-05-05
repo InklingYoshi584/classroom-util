@@ -168,4 +168,6 @@ PIN 码通过发送端设置面板管理：
 
 ## License
 
-MIT
+AGPL-3.0
+
+(c) InklingYoshi584, 2026
