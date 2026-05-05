@@ -31,9 +31,9 @@ export function SenderPage() {
   const [activeTab, setActiveTab] = useState<'students' | 'custom'>('students');
   const [customText, setCustomText] = useState('');
   const [customConfirmOpen, setCustomConfirmOpen] = useState(false);
-  const [msgTemplateUnlocked, setMsgTemplateUnlocked] = useState(false);
-  const [msgPin, setMsgPin] = useState('');
-  const [msgPinError, setMsgPinError] = useState('');
+  const [adminAuthed, setAdminAuthed] = useState(false);
+  const [adminPin, setAdminPin] = useState('');
+  const [adminPinError, setAdminPinError] = useState('');
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -226,6 +226,7 @@ export function SenderPage() {
       const data = await res.json();
       if (data.ok) {
         setSudoAuthed(true);
+        setAdminAuthed(true);
         setSudoError('');
         const list = await listPins(sudoPassword);
         setPinList(list);
@@ -267,18 +268,27 @@ export function SenderPage() {
     setSudoError('');
     setPinList([]);
     refreshPinInfo();
+    // admin stays if independently authed
   };
 
-  const handleMsgTemplateUnlock = async () => {
-    const ok = await verifyPin(msgPin);
+  const handleAdminVerify = async () => {
+    const ok = await verifyPin(adminPin);
     if (ok) {
-      setMsgTemplateUnlocked(true);
-      setMsgPin('');
-      setMsgPinError('');
+      setAdminAuthed(true);
+      setAdminPin('');
+      setAdminPinError('');
     } else {
-      setMsgPinError('PIN 错误');
+      setAdminPinError('PIN 错误');
     }
   };
+
+  const handleAdminLogout = () => {
+    setAdminAuthed(false);
+    setAdminPin('');
+    setAdminPinError('');
+  };
+
+  const isAdmin = adminAuthed || sudoAuthed;
 
   const statusLabel: Record<MqttStatus, string> = {
     disconnected: '未连接',
@@ -294,7 +304,7 @@ export function SenderPage() {
     <div className="sender-page">
       <div className="sender-header">
         <h1>Classroom Caller · 发送端</h1>
-        <button className="settings-gear-btn" onClick={() => { setMsgTemplateUnlocked(false); setMsgPin(''); setMsgPinError(''); setShowSettings(!showSettings); }} title="设置">
+        <button className="settings-gear-btn" onClick={() => { setAdminPin(''); setAdminPinError(''); setShowSettings(!showSettings); }} title="设置">
           &#9881;
         </button>
       </div>
@@ -318,6 +328,37 @@ export function SenderPage() {
             </span>
           </div>
 
+          {!sudoAuthed && (
+            <div className="admin-section">
+              {adminAuthed ? (
+                <div className="sudo-authed-header">
+                  <span className="sudo-authed-badge" style={{ background: '#2563eb' }}>Admin</span>
+                  <button className="logout-btn" onClick={handleAdminLogout}>退出</button>
+                </div>
+              ) : (
+                <>
+                  <div className="msg-template-unlock-row">
+                    <input
+                      type="text"
+                      className="msg-pin-input"
+                      placeholder="输入 PIN 以进入 Admin 模式"
+                      value={adminPin}
+                      onChange={(e) => {
+                        setAdminPin(e.target.value);
+                        setAdminPinError('');
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAdminVerify()}
+                    />
+                    <button className="msg-unlock-btn" onClick={handleAdminVerify}>
+                      验证
+                    </button>
+                  </div>
+                  {adminPinError && <div className="msg-pin-error">{adminPinError}</div>}
+                </>
+              )}
+            </div>
+          )}
+
           {!sudoAuthed ? (
             <div className="sudo-section">
               <label>Sudo 密码</label>
@@ -339,7 +380,7 @@ export function SenderPage() {
           ) : (
             <div className="sudo-authed-section">
               <div className="sudo-authed-header">
-                <span className="sudo-authed-badge">Sudo 模式</span>
+                <span className="sudo-authed-badge">Sudo</span>
                 <button className="logout-btn" onClick={handleSudoLogout}>
                   退出
                 </button>
@@ -381,7 +422,7 @@ export function SenderPage() {
           )}
 
           <div className="msg-template-label">消息模板</div>
-          {msgTemplateUnlocked ? (
+          {isAdmin ? (
             <>
               <input
                 type="text"
@@ -398,23 +439,7 @@ export function SenderPage() {
           ) : (
             <div className="msg-template-lock">
               <span className="msg-template-preview">当前: {msgTemplate}</span>
-              <div className="msg-template-unlock-row">
-                <input
-                  type="text"
-                  className="msg-pin-input"
-                  placeholder="输入 PIN 以更改消息模板"
-                  value={msgPin}
-                  onChange={(e) => {
-                    setMsgPin(e.target.value);
-                    setMsgPinError('');
-                  }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleMsgTemplateUnlock()}
-                />
-                <button className="msg-unlock-btn" onClick={handleMsgTemplateUnlock}>
-                  验证
-                </button>
-              </div>
-              {msgPinError && <div className="msg-pin-error">{msgPinError}</div>}
+              <span className="msg-template-hint">Admin 模式可以更改</span>
             </div>
           )}
         </div>
@@ -452,28 +477,30 @@ export function SenderPage() {
 
           {activeTab === 'students' ? (
             <>
-              <div className="add-student">
-                <input
-                  type="text"
-                  placeholder="新增学生姓名"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={handleAddKeyDown}
-                />
-                <button onClick={handleAdd} disabled={!newName.trim()}>
-                  + 添加
-                </button>
-                <button className="csv-import-btn" onClick={() => csvInputRef.current?.click()} title="CSV 导入">
-                  CSV
-                </button>
-                <input
-                  ref={csvInputRef}
-                  type="file"
-                  accept=".csv,.txt"
-                  style={{ display: 'none' }}
-                  onChange={handleCsvImport}
-                />
-              </div>
+              {isAdmin && (
+                <div className="add-student">
+                  <input
+                    type="text"
+                    placeholder="新增学生姓名"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    onKeyDown={handleAddKeyDown}
+                  />
+                  <button onClick={handleAdd} disabled={!newName.trim()}>
+                    + 添加
+                  </button>
+                  <button className="csv-import-btn" onClick={() => csvInputRef.current?.click()} title="CSV 导入">
+                    CSV
+                  </button>
+                  <input
+                    ref={csvInputRef}
+                    type="file"
+                    accept=".csv,.txt"
+                    style={{ display: 'none' }}
+                    onChange={handleCsvImport}
+                  />
+                </div>
+              )}
 
               <div className="student-list">
                 {students.length === 0 && (
@@ -500,26 +527,30 @@ export function SenderPage() {
                       <span className="name">{name}</span>
                     )}
                     <div className="actions">
-                      <button
-                        className="edit-btn"
-                        title="编辑"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditStart(idx);
-                        }}
-                      >
-                        &#9998;
-                      </button>
-                      <button
-                        className="delete-btn"
-                        title="删除"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(idx);
-                        }}
-                      >
-                        &#10005;
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button
+                            className="edit-btn"
+                            title="编辑"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditStart(idx);
+                            }}
+                          >
+                            &#9998;
+                          </button>
+                          <button
+                            className="delete-btn"
+                            title="删除"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(idx);
+                            }}
+                          >
+                            &#10005;
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
