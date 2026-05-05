@@ -96,7 +96,8 @@
 /* ── Table ── */
 .hw-table-wrapper {
   overflow: auto;
-  max-height: 480px;
+  flex: 1;
+  min-height: 0;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg-card);

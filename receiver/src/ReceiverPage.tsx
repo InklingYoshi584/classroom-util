@@ -222,11 +222,12 @@ export function ReceiverPage() {
         </div>
       )}
 
-      {activeTab === 'receive' ? (
-        <>
-          {!ttsEngine.isAvailable() && (
-            <div className="audio-warning">您的浏览器不支持语音合成，部分功能不可用。</div>
-          )}
+      <div className="tab-content">
+        {activeTab === 'receive' ? (
+          <>
+            {!ttsEngine.isAvailable() && (
+              <div className="audio-warning">您的浏览器不支持语音合成，部分功能不可用。</div>
+            )}
 
       <div className="top-actions">
         {!audioUnlocked && (
@@ -403,6 +404,7 @@ export function ReceiverPage() {
       ) : (
         <HomeworkTracker classId={classIdTrimmed} serverHost={serverHost.trim()} />
       )}
+      </div>
     </div>
   );
 }
