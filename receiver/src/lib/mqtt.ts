@@ -11,7 +11,15 @@ export interface CallMessage {
   timestamp: number;
 }
 
-type MessageHandler = (msg: CallMessage) => void;
+export interface HwSyncMessage {
+  type: 'hw-sync';
+  classId: string;
+  timestamp: number;
+}
+
+export type MqttMessage = CallMessage | HwSyncMessage;
+
+type MessageHandler = (msg: MqttMessage) => void;
 type StatusHandler = (status: MqttStatus) => void;
 
 export function createMqttClient() {
@@ -66,10 +74,8 @@ export function createMqttClient() {
 
     client.on('message', (_topic: string, payload: Buffer) => {
       try {
-        const msg: CallMessage = JSON.parse(payload.toString());
-        if (msg.type === 'call-student') {
-          onMessage?.(msg);
-        }
+        const msg: MqttMessage = JSON.parse(payload.toString());
+        onMessage?.(msg);
       } catch (e) {
         console.error('Failed to parse message:', e);
       }
@@ -102,6 +108,15 @@ export function createMqttClient() {
     setStatus('disconnected');
   }
 
+  function publish(message: MqttMessage): boolean {
+    if (!client || status !== 'connected' || !currentClassId) {
+      return false;
+    }
+    const topic = `classroom/${currentClassId}`;
+    client.publish(topic, JSON.stringify(message), { qos: 0 });
+    return true;
+  }
+
   return {
     get status() {
       return status;
@@ -111,6 +126,7 @@ export function createMqttClient() {
     },
     connect,
     disconnect,
+    publish,
     onMessage(handler: MessageHandler) {
       onMessage = handler;
     },

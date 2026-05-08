@@ -178,6 +178,170 @@
   white-space: nowrap;
 }
 
+/* ── Config bar & panel ── */
+.config-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.config-class-label {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--primary);
+}
+
+.config-status-label {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.config-expand-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 0.82rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.config-expand-btn:hover {
+  background: var(--border);
+}
+
+.config-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.config-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.config-panel-header h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.config-unlock-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.config-pin-input {
+  width: 120px;
+  padding: 6px 10px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: var(--bg);
+  text-align: center;
+}
+
+.config-pin-input:focus {
+  border-color: var(--primary);
+}
+
+.config-unlock-btn,
+.config-lock-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.config-unlock-btn {
+  background: var(--primary);
+  color: #fff;
+}
+
+.config-unlock-btn:hover {
+  background: var(--primary-dark);
+}
+
+.config-lock-btn {
+  background: var(--border);
+  color: var(--text);
+}
+
+.config-lock-btn:hover {
+  background: #d1d5db;
+}
+
+.config-pin-error {
+  width: 100%;
+  font-size: 0.78rem;
+  color: var(--error);
+}
+
+.config-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.config-input {
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: var(--bg);
+  transition: border-color 0.15s;
+}
+
+.config-input:focus {
+  border-color: var(--primary);
+}
+
+.config-input.locked {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.config-reconnect-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.config-reconnect-btn:hover {
+  background: var(--primary-dark);
+}
+
+.config-reconnect-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
 .top-actions {
   display: flex;
   gap: 8px;

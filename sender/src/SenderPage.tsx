@@ -4,6 +4,7 @@ import { buildCallMessage, buildCustomMessage, renderTemplate } from './lib/temp
 import { loadClassId, saveClassId, loadStudents, saveStudents, loadMessageTemplate, saveMessageTemplate, DEFAULT_MSG_TEMPLATE } from './lib/store';
 import { getPinStatus, verifyPin, setPin, removePin, listPins } from './lib/pin';
 import { parseStudentCsv } from './lib/csv';
+import { HomeworkTracker } from './HomeworkTracker';
 import './SenderPage.css';
 
 export function SenderPage() {
@@ -28,12 +29,13 @@ export function SenderPage() {
   const [sudoNewPin, setSudoNewPin] = useState('');
   const [sudoError, setSudoError] = useState('');
   const [pinList, setPinList] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'students' | 'custom'>('students');
+  const [activeTab, setActiveTab] = useState<'students' | 'custom' | 'homework'>('students');
   const [customText, setCustomText] = useState('');
   const [customConfirmOpen, setCustomConfirmOpen] = useState(false);
   const [adminAuthed, setAdminAuthed] = useState(false);
   const [adminPin, setAdminPin] = useState('');
   const [adminPinError, setAdminPinError] = useState('');
+  const [hwReloadTrigger, setHwReloadTrigger] = useState(0);
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +44,12 @@ export function SenderPage() {
     const mqtt = createMqttClient();
     mqttRef.current = mqtt;
     mqtt.onStatusChange(setStatus);
+
+    mqtt.onMessage((msg) => {
+      if (msg.type === 'hw-sync') {
+        setHwReloadTrigger((n) => n + 1);
+      }
+    });
 
     if (classId) {
       mqtt.connect(classId);
@@ -56,7 +64,7 @@ export function SenderPage() {
   }, []);
 
   useEffect(() => {
-    getPinStatus().then(setPinSet);
+    getPinStatus().then((r) => setPinSet(r === 'set'));
   }, []);
 
   const handleConnect = useCallback(() => {
@@ -146,8 +154,8 @@ export function SenderPage() {
   const handleConfirmSend = async () => {
     if (!confirmStudent) return;
     if (pinSet) {
-      const ok = await verifyPin(pinInput);
-      if (!ok) {
+      const ok = await verifyPin('', pinInput);
+      if (ok !== 'ok') {
         setPinError('PIN 错误');
         return;
       }
@@ -178,8 +186,8 @@ export function SenderPage() {
     const text = customText.trim();
     if (!text) return;
     if (pinSet) {
-      const ok = await verifyPin(pinInput);
-      if (!ok) {
+      const ok = await verifyPin('', pinInput);
+      if (ok !== 'ok') {
         setPinError('PIN 错误');
         return;
       }
@@ -210,7 +218,7 @@ export function SenderPage() {
 
   // ── Sudo flow ──
   const refreshPinInfo = async () => {
-    setPinSet(await getPinStatus());
+    setPinSet((await getPinStatus()) === 'set');
     if (sudoAuthed) {
       setPinList(await listPins(sudoPassword));
     }
@@ -272,8 +280,8 @@ export function SenderPage() {
   };
 
   const handleAdminVerify = async () => {
-    const ok = await verifyPin(adminPin);
-    if (ok) {
+    const ok = await verifyPin('', adminPin);
+    if (ok === 'ok') {
       setAdminAuthed(true);
       setAdminPin('');
       setAdminPinError('');
@@ -473,9 +481,24 @@ export function SenderPage() {
             >
               自定义消息
             </button>
+            <button
+              className={`tab-btn ${activeTab === 'homework' ? 'active' : ''}`}
+              onClick={() => setActiveTab('homework')}
+            >
+              作业
+            </button>
           </div>
 
-          {activeTab === 'students' ? (
+          {activeTab === 'homework' ? (
+            <HomeworkTracker
+              classId={connectedClass}
+              serverHost=""
+              reloadTrigger={hwReloadTrigger}
+              onDataSaved={() => {
+                mqttRef.current?.publish({ type: 'hw-sync', classId: connectedClass, timestamp: Date.now() });
+              }}
+            />
+          ) : activeTab === 'students' ? (
             <>
               {isAdmin && (
                 <div className="add-student">
