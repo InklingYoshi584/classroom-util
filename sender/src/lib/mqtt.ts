@@ -11,6 +11,15 @@ export interface CallMessage {
   timestamp: number;
 }
 
+export interface HwSyncMessage {
+  type: 'hw-sync';
+  classId: string;
+  timestamp: number;
+}
+
+export type MqttMessage = CallMessage | HwSyncMessage;
+
+type MessageHandler = (msg: MqttMessage) => void;
 type StatusHandler = (status: MqttStatus) => void;
 
 export function createMqttClient() {
@@ -18,6 +27,7 @@ export function createMqttClient() {
   let status: MqttStatus = 'disconnected';
   let currentClassId: string | null = null;
   let onStatusChange: StatusHandler | null = null;
+  let onMessage: MessageHandler | null = null;
 
   const MQTT_PORT = 8787;
 
@@ -51,6 +61,21 @@ export function createMqttClient() {
 
     client.on('connect', () => {
       setStatus('connected');
+      const topic = `classroom/${currentClassId}`;
+      client?.subscribe(topic, (err) => {
+        if (err) {
+          console.error('Subscribe error:', err);
+        }
+      });
+    });
+
+    client.on('message', (_topic: string, payload: Buffer) => {
+      try {
+        const msg: MqttMessage = JSON.parse(payload.toString());
+        onMessage?.(msg);
+      } catch (e) {
+        console.error('Failed to parse message:', e);
+      }
     });
 
     client.on('error', (err: Error) => {
@@ -80,7 +105,7 @@ export function createMqttClient() {
     setStatus('disconnected');
   }
 
-  function publish(message: CallMessage): boolean {
+  function publish(message: MqttMessage): boolean {
     if (!client || status !== 'connected' || !currentClassId) {
       return false;
     }
@@ -99,6 +124,9 @@ export function createMqttClient() {
     connect,
     disconnect,
     publish,
+    onMessage(handler: MessageHandler) {
+      onMessage = handler;
+    },
     onStatusChange(handler: StatusHandler) {
       onStatusChange = handler;
     },

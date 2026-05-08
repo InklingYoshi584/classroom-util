@@ -9,6 +9,7 @@ import websocketStream from 'websocket-stream';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '8787', 10);
+const SUDO_PASSWORD = process.env.SUDO_PASSWORD || 'Yoshi1024';
 const SENDER_DIR = path.join(__dirname, '..', 'sender', 'dist');
 
 const require = createRequire(import.meta.url);
@@ -40,12 +41,13 @@ function saveData(data) {
 }
 
 function persist() {
-  saveData({ pins: [...pinSet], students: studentsMap });
+  saveData({ pins: [...pinSet], students: studentsMap, hwData: hwMap });
 }
 
 const persisted = loadData();
 const pinSet = new Set(persisted.pins || []);
 const studentsMap = persisted.students || {};
+const hwMap = persisted.hwData || {};
 
 // ── JSON body parser (must come before routes) ──
 app.use(express.json());
@@ -65,7 +67,7 @@ app.get('/api/pin/status', (_req, res) => {
 
 app.post('/api/sudo/verify', (req, res) => {
   const { sudo } = req.body || {};
-  res.json({ ok: sudo === 'Yoshi1024' });
+  res.json({ ok: sudo === SUDO_PASSWORD });
 });
 
 app.post('/api/pin/verify', (req, res) => {
@@ -76,7 +78,7 @@ app.post('/api/pin/verify', (req, res) => {
 
 app.post('/api/pin/list', (req, res) => {
   const { sudo } = req.body || {};
-  if (sudo !== 'Yoshi1024') {
+  if (sudo !== SUDO_PASSWORD) {
     return res.status(403).json({ ok: false, error: 'Sudo 密码错误' });
   }
   res.json({ pins: [...pinSet] });
@@ -84,7 +86,7 @@ app.post('/api/pin/list', (req, res) => {
 
 app.post('/api/pin/set', (req, res) => {
   const { sudo, pin } = req.body || {};
-  if (sudo !== 'Yoshi1024') {
+  if (sudo !== SUDO_PASSWORD) {
     return res.status(403).json({ ok: false, error: 'Sudo 密码错误' });
   }
   if (!pin || typeof pin !== 'string' || !pin.trim()) {
@@ -102,7 +104,7 @@ app.post('/api/pin/set', (req, res) => {
 
 app.post('/api/pin/remove', (req, res) => {
   const { sudo, pin } = req.body || {};
-  if (sudo !== 'Yoshi1024') {
+  if (sudo !== SUDO_PASSWORD) {
     return res.status(403).json({ ok: false, error: 'Sudo 密码错误' });
   }
   if (!pin || !pinSet.has(pin)) {
@@ -128,6 +130,23 @@ app.post('/api/students/set', (req, res) => {
   studentsMap[cls] = students;
   persist();
   console.log(`[DATA] students for ${cls}: ${students.length} names`);
+  res.json({ ok: true });
+});
+
+// ── Homework tracker API ──
+app.get('/api/hw/load', (req, res) => {
+  const cls = req.query.class || '';
+  res.json({ data: hwMap[cls] || {} });
+});
+
+app.post('/api/hw/save', (req, res) => {
+  const { class: cls, data } = req.body || {};
+  if (!cls || typeof data !== 'object') {
+    return res.status(400).json({ ok: false, error: '参数错误' });
+  }
+  hwMap[cls] = data;
+  persist();
+  console.log(`[DATA] hw for ${cls}: saved`);
   res.json({ ok: true });
 });
 

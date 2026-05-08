@@ -25,6 +25,11 @@ export function ReceiverPage() {
   const [gatePinInput, setGatePinInput] = useState('');
   const [gatePinError, setGatePinError] = useState('');
   const [activeTab, setActiveTab] = useState<'receive' | 'homework'>('receive');
+  const [configLocked, setConfigLocked] = useState(false);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [configUnlockPin, setConfigUnlockPin] = useState('');
+  const [configPinError, setConfigPinError] = useState('');
+  const [hwReloadTrigger, setHwReloadTrigger] = useState(0);
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
   const seenIdsRef = useRef<Set<string>>(new Set());
@@ -39,15 +44,21 @@ export function ReceiverPage() {
     mqtt.onStatusChange(setStatus);
 
     mqtt.onMessage((msg) => {
-      if (seenIdsRef.current.has(msg.id)) return;
-      seenIdsRef.current.add(msg.id);
+      if (msg.type === 'hw-sync') {
+        setHwReloadTrigger((n) => n + 1);
+        return;
+      }
+      if (msg.type === 'call-student') {
+        if (seenIdsRef.current.has(msg.id)) return;
+        seenIdsRef.current.add(msg.id);
 
-      setCurrentCall(msg);
-      setHistory((h) => [msg, ...h].slice(0, 50));
+        setCurrentCall(msg);
+        setHistory((h) => [msg, ...h].slice(0, 50));
 
-      const vars = { name: msg.name, message: msg.message, time: msg.time };
-      const text = renderTemplate(ttsSettingsRef.current.template || DEFAULT_TTS.template, vars);
-      ttsEngine.speak(text, { ...ttsSettingsRef.current, enabled: true });
+        const vars = { name: msg.name, message: msg.message, time: msg.time };
+        const text = renderTemplate(ttsSettingsRef.current.template || DEFAULT_TTS.template, vars);
+        ttsEngine.speak(text, { ...ttsSettingsRef.current, enabled: true });
+      }
     });
 
     ttsEngine.getVoices().then((v) => setVoices(v));
@@ -67,7 +78,40 @@ export function ReceiverPage() {
     if (!trimmed) return;
     localStorage.setItem(CLASS_KEY, trimmed);
     mqttRef.current?.connect(trimmed, serverHost.trim() || undefined);
+    setConfigLocked(true);
+    setShowConfigPanel(false);
   }, [classId, serverHost]);
+
+  const handleConfigUnlockRequest = async () => {
+    const host = serverHostRef.current.trim();
+    const result = await getPinStatus(host);
+    if (result === 'set') {
+      setConfigUnlockPin('');
+      setConfigPinError('');
+      return;
+    }
+    setConfigLocked(false);
+  };
+
+  const handleConfigPinSubmit = async () => {
+    const host = serverHostRef.current.trim();
+    const result = await verifyPin(host, configUnlockPin);
+    if (result === 'ok') {
+      setConfigLocked(false);
+      setConfigUnlockPin('');
+      setConfigPinError('');
+    } else if (result === 'wrong') {
+      setConfigPinError('PIN 错误');
+    } else {
+      setConfigPinError('无法连接到服务器，请检查服务器地址');
+    }
+  };
+
+  const handleConfigLock = () => {
+    setConfigLocked(true);
+    setConfigUnlockPin('');
+    setConfigPinError('');
+  };
 
   const handleClassKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleConnect();
@@ -164,7 +208,7 @@ export function ReceiverPage() {
   const statusLabel: Record<MqttStatus, string> = {
     disconnected: '未连接',
     connecting: '连接中...',
-    connected: '已连接 | 等待呼叫...',
+    connected: '已连接',
     error: '连接错误',
   };
 
@@ -182,34 +226,98 @@ export function ReceiverPage() {
         <span>{statusLabel[status]}</span>
       </div>
 
-      <div className="server-host">
-        <input
-          type="text"
-          placeholder="服务器地址 (留空=本机)"
-          value={serverHost}
-          onChange={(e) => {
-            setServerHost(e.target.value);
-            localStorage.setItem(SERVER_HOST_KEY, e.target.value);
-          }}
-          onKeyDown={handleClassKeyDown}
-        />
-        <span className="server-host-hint">
-          例: 192.168.1.5
-        </span>
-      </div>
+      {!classIdTrimmed ? (
+        <div className="class-selector">
+          <input
+            type="text"
+            placeholder="输入班级 ID (如 math-1)"
+            value={classId}
+            onChange={(e) => setClassId(e.target.value)}
+            onKeyDown={handleClassKeyDown}
+          />
+          <button onClick={handleConnect} disabled={status === 'connecting'}>
+            {status === 'connecting' ? '...' : '订阅班级'}
+          </button>
+        </div>
+      ) : (
+        <div className="config-bar">
+          <span className="config-class-label">{classIdTrimmed}</span>
+          <span className="config-status-label">{statusLabel[status]}</span>
+          <button
+            className="config-expand-btn"
+            onClick={() => setShowConfigPanel(!showConfigPanel)}
+            title="连接设置"
+          >
+            {showConfigPanel ? '收起设置' : '连接设置'} {configLocked ? '🔒' : '🔓'}
+          </button>
+        </div>
+      )}
 
-      <div className="class-selector">
-        <input
-          type="text"
-          placeholder="输入班级 ID (如 math-1)"
-          value={classId}
-          onChange={(e) => setClassId(e.target.value)}
-          onKeyDown={handleClassKeyDown}
-        />
-        <button onClick={handleConnect} disabled={!classIdTrimmed || status === 'connecting'}>
-          {status === 'connecting' ? '...' : '订阅'}
-        </button>
-      </div>
+      {classIdTrimmed && showConfigPanel && (
+        <div className="config-panel">
+          <div className="config-panel-header">
+            <h4>连接设置</h4>
+            {configLocked ? (
+              <div className="config-unlock-row">
+                <input
+                  type="password"
+                  className="config-pin-input"
+                  placeholder="输入 PIN 解锁"
+                  value={configUnlockPin}
+                  onChange={(e) => {
+                    setConfigUnlockPin(e.target.value);
+                    setConfigPinError('');
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleConfigPinSubmit()}
+                />
+                <button className="config-unlock-btn" onClick={handleConfigPinSubmit}>
+                  解锁
+                </button>
+                {configPinError && <div className="config-pin-error">{configPinError}</div>}
+              </div>
+            ) : (
+              <button className="config-lock-btn" onClick={handleConfigLock}>
+                锁定
+              </button>
+            )}
+          </div>
+
+          <label className="config-label">
+            服务器地址
+            <input
+              type="text"
+              className={`config-input ${configLocked ? 'locked' : ''}`}
+              placeholder="留空=本机"
+              value={serverHost}
+              onChange={(e) => {
+                setServerHost(e.target.value);
+                localStorage.setItem(SERVER_HOST_KEY, e.target.value);
+              }}
+              onKeyDown={handleClassKeyDown}
+              disabled={configLocked}
+            />
+          </label>
+
+          <label className="config-label">
+            频道 (班级 ID)
+            <input
+              type="text"
+              className={`config-input ${configLocked ? 'locked' : ''}`}
+              placeholder="输入班级 ID"
+              value={classId}
+              onChange={(e) => setClassId(e.target.value)}
+              onKeyDown={handleClassKeyDown}
+              disabled={configLocked}
+            />
+          </label>
+
+          {!configLocked && (
+            <button className="config-reconnect-btn" onClick={handleConnect} disabled={status === 'connecting'}>
+              {status === 'connecting' ? '...' : '重新连接'}
+            </button>
+          )}
+        </div>
+      )}
 
       {classIdTrimmed && (
         <div className="tab-bar">
@@ -381,7 +489,7 @@ export function ReceiverPage() {
             <h3>需要 PIN 验证</h3>
             <p>请输入 PIN 以访问设置</p>
             <input
-              type="text"
+              type="password"
               className="pin-gate-input"
               placeholder="输入 PIN"
               value={gatePinInput}
@@ -402,7 +510,14 @@ export function ReceiverPage() {
       )}
         </>
       ) : (
-        <HomeworkTracker classId={classIdTrimmed} serverHost={serverHost.trim()} />
+        <HomeworkTracker
+          classId={classIdTrimmed}
+          serverHost={serverHost.trim()}
+          reloadTrigger={hwReloadTrigger}
+          onDataSaved={() => {
+            mqttRef.current?.publish({ type: 'hw-sync', classId: classIdTrimmed, timestamp: Date.now() });
+          }}
+        />
       )}
       </div>
     </div>

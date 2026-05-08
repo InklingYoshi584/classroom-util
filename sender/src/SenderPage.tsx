@@ -4,6 +4,7 @@ import { buildCallMessage, buildCustomMessage, renderTemplate } from './lib/temp
 import { loadClassId, saveClassId, loadStudents, saveStudents, loadMessageTemplate, saveMessageTemplate, DEFAULT_MSG_TEMPLATE } from './lib/store';
 import { getPinStatus, verifyPin, setPin, removePin, listPins } from './lib/pin';
 import { parseStudentCsv } from './lib/csv';
+import { HomeworkTracker } from './HomeworkTracker';
 import './SenderPage.css';
 
 export function SenderPage() {
@@ -28,12 +29,13 @@ export function SenderPage() {
   const [sudoNewPin, setSudoNewPin] = useState('');
   const [sudoError, setSudoError] = useState('');
   const [pinList, setPinList] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'students' | 'custom'>('students');
+  const [activeTab, setActiveTab] = useState<'students' | 'custom' | 'homework'>('students');
   const [customText, setCustomText] = useState('');
   const [customConfirmOpen, setCustomConfirmOpen] = useState(false);
   const [adminAuthed, setAdminAuthed] = useState(false);
   const [adminPin, setAdminPin] = useState('');
   const [adminPinError, setAdminPinError] = useState('');
+  const [hwReloadTrigger, setHwReloadTrigger] = useState(0);
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +44,12 @@ export function SenderPage() {
     const mqtt = createMqttClient();
     mqttRef.current = mqtt;
     mqtt.onStatusChange(setStatus);
+
+    mqtt.onMessage((msg) => {
+      if (msg.type === 'hw-sync') {
+        setHwReloadTrigger((n) => n + 1);
+      }
+    });
 
     if (classId) {
       mqtt.connect(classId);
@@ -56,7 +64,7 @@ export function SenderPage() {
   }, []);
 
   useEffect(() => {
-    getPinStatus().then(setPinSet);
+    getPinStatus().then((r) => setPinSet(r === 'set'));
   }, []);
 
   const handleConnect = useCallback(() => {
@@ -146,8 +154,8 @@ export function SenderPage() {
   const handleConfirmSend = async () => {
     if (!confirmStudent) return;
     if (pinSet) {
-      const ok = await verifyPin(pinInput);
-      if (!ok) {
+      const ok = await verifyPin('', pinInput);
+      if (ok !== 'ok') {
         setPinError('PIN 错误');
         return;
       }
@@ -178,8 +186,8 @@ export function SenderPage() {
     const text = customText.trim();
     if (!text) return;
     if (pinSet) {
-      const ok = await verifyPin(pinInput);
-      if (!ok) {
+      const ok = await verifyPin('', pinInput);
+      if (ok !== 'ok') {
         setPinError('PIN 错误');
         return;
       }
@@ -210,7 +218,7 @@ export function SenderPage() {
 
   // ── Sudo flow ──
   const refreshPinInfo = async () => {
-    setPinSet(await getPinStatus());
+    setPinSet((await getPinStatus()) === 'set');
     if (sudoAuthed) {
       setPinList(await listPins(sudoPassword));
     }
@@ -272,8 +280,8 @@ export function SenderPage() {
   };
 
   const handleAdminVerify = async () => {
-    const ok = await verifyPin(adminPin);
-    if (ok) {
+    const ok = await verifyPin('', adminPin);
+    if (ok === 'ok') {
       setAdminAuthed(true);
       setAdminPin('');
       setAdminPinError('');
@@ -339,7 +347,7 @@ export function SenderPage() {
                 <>
                   <div className="msg-template-unlock-row">
                     <input
-                      type="text"
+                      type="password"
                       className="msg-pin-input"
                       placeholder="输入 PIN 以进入 Admin 模式"
                       value={adminPin}
@@ -388,7 +396,7 @@ export function SenderPage() {
 
               <div className="add-pin-row">
                 <input
-                  type="text"
+                  type="password"
                   placeholder="输入新 PIN"
                   value={sudoNewPin}
                   onChange={(e) => setSudoNewPin(e.target.value)}
@@ -402,7 +410,7 @@ export function SenderPage() {
 
               <div className="pin-list-label">已有 PIN</div>
               {pinList.length === 0 ? (
-                <div className="pin-list-empty">暂无 PIN</div>
+                <div className="pin-list-empty">暂无 PIN，验证 Sudo 密码后可添加</div>
               ) : (
                 <div className="pin-list">
                   {pinList.map((pin) => (
@@ -454,7 +462,7 @@ export function SenderPage() {
           onKeyDown={handleClassKeyDown}
         />
         <button onClick={handleConnect} disabled={!classIdTrimmed || status === 'connecting'}>
-          {status === 'connecting' ? '...' : '连接'}
+          {status === 'connecting' ? '...' : '连接班级'}
         </button>
       </div>
 
@@ -473,9 +481,24 @@ export function SenderPage() {
             >
               自定义消息
             </button>
+            <button
+              className={`tab-btn ${activeTab === 'homework' ? 'active' : ''}`}
+              onClick={() => setActiveTab('homework')}
+            >
+              作业
+            </button>
           </div>
 
-          {activeTab === 'students' ? (
+          {activeTab === 'homework' ? (
+            <HomeworkTracker
+              classId={connectedClass}
+              serverHost=""
+              reloadTrigger={hwReloadTrigger}
+              onDataSaved={() => {
+                mqttRef.current?.publish({ type: 'hw-sync', classId: connectedClass, timestamp: Date.now() });
+              }}
+            />
+          ) : activeTab === 'students' ? (
             <>
               {isAdmin && (
                 <div className="add-student">
@@ -503,9 +526,11 @@ export function SenderPage() {
               )}
 
               <div className="student-list">
-                {students.length === 0 && (
-                  <div className="student-list-empty">暂无学生，请先添加</div>
-                )}
+                  {students.length === 0 && (
+                    <div className="student-list-empty">
+                      {isAdmin ? '暂无学生，使用上方输入框或 CSV 导入添加' : '暂无学生，请在设置中进入 Admin 模式后添加'}
+                    </div>
+                  )}
                 {students.map((name, idx) => (
                   <div
                     key={`${idx}-${name}`}
@@ -609,7 +634,7 @@ export function SenderPage() {
             {pinSet && (
               <div className="pin-row">
                 <input
-                  type="text"
+                  type="password"
                   className="pin-input"
                   placeholder="输入 PIN"
                   value={pinInput}
