@@ -297,19 +297,6 @@
   transform: none;
 }
 
-/* ── PIN gate in HW tracker ── */
-.hw-pin-hint {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-}
-
-.hw-pin-error-msg {
-  font-size: 0.8rem;
-  color: var(--error);
-  text-align: center;
-}
-
 /* ── Content ── */
 .hw-content-section {
   display: flex;

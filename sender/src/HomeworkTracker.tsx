@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { electronApi, HomeworkDayData, HomeworkTask, HomeworkStatus } from './lib/electronApi';
-import { getPinStatus, verifyPin } from './lib/pin';
 import './HomeworkTracker.css';
 
 interface Props {
@@ -50,9 +49,6 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
   const [taskNameInput, setTaskNameInput] = useState('');
   const [editingTask, setEditingTask] = useState<HomeworkTask | null>(null);
   const [adminUnlocked, setAdminUnlocked] = useState(() => localStorage.getItem(`hw-admin-${classId}`) === '1');
-  const [showPinGate, setShowPinGate] = useState(false);
-  const [hwPinInput, setHwPinInput] = useState('');
-  const [hwPinError, setHwPinError] = useState('');
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState<Set<number>>(new Set());
@@ -207,49 +203,14 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
   };
 
   // ── Admin lock ──
-  const handleAdminUnlock = async () => {
-    try {
-      const r = await fetch(`${apiBase}/api/pin/status`);
-      const d = await r.json();
-      if (!d.set) {
-        setAdminUnlocked(true);
-        localStorage.setItem(`hw-admin-${classId}`, '1');
-        return;
-      }
-    } catch {
-      setToast({ msg: '无法连接到服务器', error: true });
-      return;
+  const handleToggleAdmin = () => {
+    if (adminUnlocked) {
+      setAdminUnlocked(false);
+      localStorage.removeItem(`hw-admin-${classId}`);
+    } else {
+      setAdminUnlocked(true);
+      localStorage.setItem(`hw-admin-${classId}`, '1');
     }
-    setShowPinGate(true);
-    setHwPinInput('');
-    setHwPinError('');
-  };
-
-  const handleHwPinSubmit = async () => {
-    try {
-      const res = await fetch(`${apiBase}/api/pin/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: hwPinInput }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setAdminUnlocked(true);
-        localStorage.setItem(`hw-admin-${classId}`, '1');
-        setShowPinGate(false);
-        setHwPinInput('');
-        setHwPinError('');
-      } else {
-        setHwPinError('PIN 错误');
-      }
-    } catch {
-      setHwPinError('无法连接到服务器');
-    }
-  };
-
-  const handleAdminLock = () => {
-    setAdminUnlocked(false);
-    localStorage.removeItem(`hw-admin-${classId}`);
   };
 
   // ── Export ──
@@ -329,10 +290,10 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
             <button className="hw-btn" onClick={() => { setTaskNameInput(''); setEditingTask(null); setShowTaskModal(true); }}>
               + 添加作业
             </button>
-            <button className="hw-btn hw-lock-btn" onClick={handleAdminLock}>锁定编辑</button>
+            <button className="hw-btn hw-lock-btn" onClick={handleToggleAdmin}>锁定编辑</button>
           </>
         ) : (
-          <button className="hw-btn hw-unlock-btn" onClick={handleAdminUnlock}>解锁编辑</button>
+          <button className="hw-btn hw-unlock-btn" onClick={handleToggleAdmin}>解锁编辑</button>
         )}
         <button className="hw-btn" onClick={handleExportXlsx}>导出 XLSX</button>
         <button className="hw-btn" onClick={handleExportImage}>导出图片</button>
@@ -521,32 +482,6 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
       )}
 
       {/* ── Admin PIN Gate ── */}
-      {showPinGate && (
-        <div className="hw-overlay" onClick={() => setShowPinGate(false)}>
-          <div className="hw-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>需要 PIN 验证</h3>
-            <p className="hw-pin-hint">请输入 PIN 以解锁编辑权限</p>
-            <input
-              type="password"
-              className="hw-modal-input"
-              placeholder="输入 PIN"
-              value={hwPinInput}
-              onChange={(e) => {
-                setHwPinInput(e.target.value);
-                setHwPinError('');
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && handleHwPinSubmit()}
-              autoFocus
-            />
-            {hwPinError && <div className="hw-pin-error-msg">{hwPinError}</div>}
-            <div className="hw-modal-btns">
-              <button className="hw-btn" onClick={() => setShowPinGate(false)}>取消</button>
-              <button className="hw-btn hw-btn-primary" onClick={handleHwPinSubmit}>确认</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {toast && (
         <div
           className={`hw-toast ${toast.error ? 'error' : ''}`}
