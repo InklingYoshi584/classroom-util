@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { electronApi, HomeworkDayData, HomeworkTask, HomeworkStatus } from './lib/electronApi';
+import { getPinStatus, verifyPin } from './lib/pin';
 import './HomeworkTracker.css';
 
 interface Props {
@@ -49,6 +50,11 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
   const [taskNameInput, setTaskNameInput] = useState('');
   const [editingTask, setEditingTask] = useState<HomeworkTask | null>(null);
   const [adminUnlocked, setAdminUnlocked] = useState(() => localStorage.getItem(`hw-admin-${classId}`) === '1');
+  const [showImportPinGate, setShowImportPinGate] = useState(false);
+  const [importPinInput, setImportPinInput] = useState('');
+  const [importPinError, setImportPinError] = useState('');
+  const importFileRef = useRef<File | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState<Set<number>>(new Set());
@@ -263,6 +269,83 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
     }
   };
 
+  // ── Import ──
+  const handleImportClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    importFileRef.current = file;
+
+    try {
+      const r = await fetch(`${apiBase}/api/pin/status`);
+      const d = await r.json();
+      if (!d.set) {
+        await doImport(file);
+        return;
+      }
+    } catch {}
+
+    setShowImportPinGate(true);
+    setImportPinInput('');
+    setImportPinError('');
+    e.target.value = '';
+  };
+
+  const handleImportPinSubmit = async () => {
+    try {
+      const res = await fetch(`${apiBase}/api/pin/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: importPinInput }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setShowImportPinGate(false);
+        setImportPinInput('');
+        setImportPinError('');
+        if (importFileRef.current) {
+          await doImport(importFileRef.current);
+          importFileRef.current = null;
+        }
+      } else {
+        setImportPinError('PIN 错误');
+      }
+    } catch {
+      setImportPinError('无法连接到服务器');
+    }
+  };
+
+  const doImport = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const imported = JSON.parse(reader.result as string);
+        if (typeof imported !== 'object' || Array.isArray(imported)) {
+          setToast({ msg: '无效的 JSON 格式', error: true });
+          return;
+        }
+        const merged = { ...allData, ...imported };
+        setAllData(merged);
+        setDataChanged(true);
+        fetch(`${apiBase}/api/hw/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ class: classId, data: merged }),
+        }).then(() => onDataSaved?.()).catch(() => {});
+        setToast({ msg: `已导入 ${Object.keys(imported).length} 天数据` });
+      } catch {
+        setToast({ msg: 'JSON 解析失败', error: true });
+      }
+    };
+    reader.onerror = () => {
+      setToast({ msg: '文件读取失败', error: true });
+    };
+    reader.readAsText(file);
+  };
+
   // ── Week nav ──
   const weekDates = getWeekDates(weekOffset);
 
@@ -298,6 +381,14 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
         <button className="hw-btn" onClick={handleExportXlsx}>导出 XLSX</button>
         <button className="hw-btn" onClick={handleExportImage}>导出图片</button>
         <button className="hw-btn" onClick={handleBackup}>备份数据</button>
+        <button className="hw-btn" onClick={handleImportClick}>导入数据</button>
+        <input
+          ref={importInputRef}
+          type="file"
+          accept=".json"
+          style={{ display: 'none' }}
+          onChange={handleImportFileSelected}
+        />
       </div>
 
       {students.length === 0 && (
@@ -481,7 +572,33 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
         </div>
       )}
 
-      {/* ── Admin PIN Gate ── */}
+      {/* ── Import PIN Gate ── */}
+      {showImportPinGate && (
+        <div className="hw-overlay" onClick={() => { setShowImportPinGate(false); importFileRef.current = null; }}>
+          <div className="hw-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>需要 PIN 验证</h3>
+            <p className="hw-pin-hint">导入数据需要 PIN 验证</p>
+            <input
+              type="password"
+              className="hw-modal-input"
+              placeholder="输入 PIN"
+              value={importPinInput}
+              onChange={(e) => {
+                setImportPinInput(e.target.value);
+                setImportPinError('');
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && handleImportPinSubmit()}
+              autoFocus
+            />
+            {importPinError && <div className="hw-pin-error-msg">{importPinError}</div>}
+            <div className="hw-modal-btns">
+              <button className="hw-btn" onClick={() => { setShowImportPinGate(false); importFileRef.current = null; }}>取消</button>
+              <button className="hw-btn hw-btn-primary" onClick={handleImportPinSubmit}>确认导入</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div
           className={`hw-toast ${toast.error ? 'error' : ''}`}
