@@ -340,7 +340,7 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
       </div>
 
       {students.length === 0 && (
-        <div className="hw-empty">正在加载学生名单...</div>
+        <div className="hw-empty">正在加载学生名单... 如持续加载请检查网络连接</div>
       )}
 
       {students.length > 0 && dayData.tasks.length === 0 && (
@@ -402,7 +402,7 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
           <label className="hw-content-label">今日作业内容</label>
           <textarea
             className="hw-content-input"
-            placeholder={adminUnlocked ? "输入今天布置的作业内容..." : "编辑已锁定"}
+            placeholder={adminUnlocked ? "输入今天布置的作业内容..." : "点击「解锁编辑」后可编辑"}
             value={dayData.todayTaskContent}
             onChange={(e) => handleContentChange(e.target.value)}
             readOnly={!adminUnlocked}
@@ -504,7 +504,7 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
             <input
               type="text"
               className="hw-modal-input"
-              placeholder="作业名称"
+              placeholder="输入作业名称，如: 语文练习册"
               value={taskNameInput}
               onChange={(e) => setTaskNameInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (editingTask ? handleEditTask() : handleAddTask())}

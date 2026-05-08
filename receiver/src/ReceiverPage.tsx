@@ -208,7 +208,7 @@ export function ReceiverPage() {
   const statusLabel: Record<MqttStatus, string> = {
     disconnected: '未连接',
     connecting: '连接中...',
-    connected: '已连接 | 等待呼叫...',
+    connected: '已连接',
     error: '连接错误',
   };
 
@@ -236,7 +236,7 @@ export function ReceiverPage() {
             onKeyDown={handleClassKeyDown}
           />
           <button onClick={handleConnect} disabled={status === 'connecting'}>
-            {status === 'connecting' ? '...' : '订阅'}
+            {status === 'connecting' ? '...' : '订阅班级'}
           </button>
         </div>
       ) : (

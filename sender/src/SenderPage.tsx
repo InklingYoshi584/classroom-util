@@ -410,7 +410,7 @@ export function SenderPage() {
 
               <div className="pin-list-label">已有 PIN</div>
               {pinList.length === 0 ? (
-                <div className="pin-list-empty">暂无 PIN</div>
+                <div className="pin-list-empty">暂无 PIN，验证 Sudo 密码后可添加</div>
               ) : (
                 <div className="pin-list">
                   {pinList.map((pin) => (
@@ -462,7 +462,7 @@ export function SenderPage() {
           onKeyDown={handleClassKeyDown}
         />
         <button onClick={handleConnect} disabled={!classIdTrimmed || status === 'connecting'}>
-          {status === 'connecting' ? '...' : '连接'}
+          {status === 'connecting' ? '...' : '连接班级'}
         </button>
       </div>
 
@@ -526,9 +526,11 @@ export function SenderPage() {
               )}
 
               <div className="student-list">
-                {students.length === 0 && (
-                  <div className="student-list-empty">暂无学生，请先添加</div>
-                )}
+                  {students.length === 0 && (
+                    <div className="student-list-empty">
+                      {isAdmin ? '暂无学生，使用上方输入框或 CSV 导入添加' : '暂无学生，请在设置中进入 Admin 模式后添加'}
+                    </div>
+                  )}
                 {students.map((name, idx) => (
                   <div
                     key={`${idx}-${name}`}
