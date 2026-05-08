@@ -260,7 +260,7 @@ export function ReceiverPage() {
             {configLocked ? (
               <div className="config-unlock-row">
                 <input
-                  type="text"
+                  type="password"
                   className="config-pin-input"
                   placeholder="输入 PIN 解锁"
                   value={configUnlockPin}
@@ -489,7 +489,7 @@ export function ReceiverPage() {
             <h3>需要 PIN 验证</h3>
             <p>请输入 PIN 以访问设置</p>
             <input
-              type="text"
+              type="password"
               className="pin-gate-input"
               placeholder="输入 PIN"
               value={gatePinInput}

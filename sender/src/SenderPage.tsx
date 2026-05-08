@@ -347,7 +347,7 @@ export function SenderPage() {
                 <>
                   <div className="msg-template-unlock-row">
                     <input
-                      type="text"
+                      type="password"
                       className="msg-pin-input"
                       placeholder="输入 PIN 以进入 Admin 模式"
                       value={adminPin}
@@ -396,7 +396,7 @@ export function SenderPage() {
 
               <div className="add-pin-row">
                 <input
-                  type="text"
+                  type="password"
                   placeholder="输入新 PIN"
                   value={sudoNewPin}
                   onChange={(e) => setSudoNewPin(e.target.value)}
@@ -632,7 +632,7 @@ export function SenderPage() {
             {pinSet && (
               <div className="pin-row">
                 <input
-                  type="text"
+                  type="password"
                   className="pin-input"
                   placeholder="输入 PIN"
                   value={pinInput}

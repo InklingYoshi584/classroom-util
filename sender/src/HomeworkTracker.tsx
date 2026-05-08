@@ -527,7 +527,7 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
             <h3>需要 PIN 验证</h3>
             <p className="hw-pin-hint">请输入 PIN 以解锁编辑权限</p>
             <input
-              type="text"
+              type="password"
               className="hw-modal-input"
               placeholder="输入 PIN"
               value={hwPinInput}
