@@ -322,12 +322,30 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const imported = JSON.parse(reader.result as string);
+        let imported = JSON.parse(reader.result as string);
         if (typeof imported !== 'object' || Array.isArray(imported)) {
           setToast({ msg: '无效的 JSON 格式', error: true });
           return;
         }
-        const merged = { ...allData, ...imported };
+        if (imported.homeworkData && typeof imported.homeworkData === 'object') {
+          imported = imported.homeworkData;
+        }
+        const dateKeys = Object.keys(imported).filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k));
+        if (dateKeys.length === 0) {
+          setToast({ msg: '未找到有效的日期数据', error: true });
+          return;
+        }
+        const clean: Record<string, HomeworkDayData> = {};
+        for (const k of dateKeys) {
+          if (imported[k] && typeof imported[k] === 'object') {
+            clean[k] = {
+              tasks: Array.isArray(imported[k].tasks) ? imported[k].tasks : [],
+              taskStatuses: imported[k].taskStatuses || {},
+              todayTaskContent: imported[k].todayTaskContent || '',
+            };
+          }
+        }
+        const merged = { ...allData, ...clean };
         setAllData(merged);
         setDataChanged(true);
         fetch(`${apiBase}/api/hw/save`, {
@@ -335,7 +353,7 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ class: classId, data: merged }),
         }).then(() => onDataSaved?.()).catch(() => {});
-        setToast({ msg: `已导入 ${Object.keys(imported).length} 天数据` });
+        setToast({ msg: `已导入 ${dateKeys.length} 天数据` });
       } catch {
         setToast({ msg: 'JSON 解析失败', error: true });
       }

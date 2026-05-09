@@ -634,6 +634,28 @@
   background: #dbeafe;
 }
 
+.sender-nick {
+  font-size: 0.75rem;
+  color: var(--primary);
+  background: #dbeafe;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.callback-btn {
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.callback-btn:hover {
+  background: var(--primary-dark);
+}
+
 .audio-warning {
   background: #fef3c7;
   color: #92400e;
@@ -739,4 +761,191 @@
 
 .pin-gate-buttons .confirm-btn:hover {
   background: var(--primary-dark);
+}
+
+/* ── Mode bar ── */
+.mode-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 7px 0;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mode-btn:hover {
+  background: var(--border);
+}
+
+.mode-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.schedule-active-badge {
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: var(--success);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Call popup ── */
+.call-popup {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  border-radius: 12px;
+  padding: 14px 18px;
+  min-width: 280px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  z-index: 9999;
+  animation: popupIn 0.3s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.call-popup-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.call-popup-msg {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.call-popup-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.call-popup-close:hover {
+  background: rgba(255,255,255,0.35);
+}
+
+@keyframes popupIn {
+  from {
+    transform: translateX(-50%) translateY(80px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ── Schedule editor ── */
+.schedule-editor {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.schedule-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.schedule-toggle-btn {
+  font-size: 0.78rem;
+  color: var(--primary);
+  font-weight: 600;
+  background: none;
+}
+
+.schedule-toggle-btn:hover {
+  text-decoration: underline;
+}
+
+.schedule-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 0.85rem;
+}
+
+.schedule-del-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: var(--error);
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.schedule-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.schedule-time-input {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  background: var(--bg);
+}
+
+.schedule-add-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.schedule-empty {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  padding: 4px 0;
 }

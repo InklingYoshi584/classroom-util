@@ -36,6 +36,7 @@ export function SenderPage() {
   const [adminPin, setAdminPin] = useState('');
   const [adminPinError, setAdminPinError] = useState('');
   const [hwReloadTrigger, setHwReloadTrigger] = useState(0);
+  const [senderNickname, setSenderNickname] = useState(() => localStorage.getItem('classroom-sender-nickname') || '');
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -48,6 +49,9 @@ export function SenderPage() {
     mqtt.onMessage((msg) => {
       if (msg.type === 'hw-sync') {
         setHwReloadTrigger((n) => n + 1);
+      }
+      if (msg.type === 'call-sender' && msg.targetClientId === mqttRef.current?.clientId) {
+        setToast({ msg: `接收端呼叫: ${msg.message}` });
       }
     });
 
@@ -160,7 +164,7 @@ export function SenderPage() {
         return;
       }
     }
-    const raw = buildCallMessage(confirmStudent, msgTemplate);
+    const raw = buildCallMessage(confirmStudent, msgTemplate, mqttRef.current?.clientId || undefined, senderNickname || undefined);
     const msg: CallMessage = JSON.parse(raw);
     const ok = mqttRef.current?.publish(msg);
     if (ok) {
@@ -192,7 +196,7 @@ export function SenderPage() {
         return;
       }
     }
-    const raw = buildCustomMessage(text);
+    const raw = buildCustomMessage(text, mqttRef.current?.clientId || undefined, senderNickname || undefined);
     const msg: CallMessage = JSON.parse(raw);
     const ok = mqttRef.current?.publish(msg);
     if (ok) {
@@ -450,6 +454,19 @@ export function SenderPage() {
               <span className="msg-template-hint">Admin 模式可以更改</span>
             </div>
           )}
+
+          <div className="msg-template-label">发送者昵称</div>
+          <input
+            type="text"
+            className="msg-template-input"
+            placeholder="如: 王老师"
+            value={senderNickname}
+            onChange={(e) => {
+              setSenderNickname(e.target.value);
+              localStorage.setItem('classroom-sender-nickname', e.target.value);
+            }}
+          />
+          <span className="msg-template-hint">接收端可以看到此昵称</span>
         </div>
       )}
 

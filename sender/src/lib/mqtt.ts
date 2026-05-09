@@ -9,6 +9,8 @@ export interface CallMessage {
   message: string;
   time: string;
   timestamp: number;
+  senderId?: string;
+  nickname?: string;
 }
 
 export interface HwSyncMessage {
@@ -17,7 +19,16 @@ export interface HwSyncMessage {
   timestamp: number;
 }
 
-export type MqttMessage = CallMessage | HwSyncMessage;
+export interface CallSenderMessage {
+  type: 'call-sender';
+  id: string;
+  targetClientId: string;
+  message: string;
+  time: string;
+  timestamp: number;
+}
+
+export type MqttMessage = CallMessage | HwSyncMessage | CallSenderMessage;
 
 type MessageHandler = (msg: MqttMessage) => void;
 type StatusHandler = (status: MqttStatus) => void;
@@ -26,6 +37,7 @@ export function createMqttClient() {
   let client: MqttClient | null = null;
   let status: MqttStatus = 'disconnected';
   let currentClassId: string | null = null;
+  let currentClientId: string | null = null;
   let onStatusChange: StatusHandler | null = null;
   let onMessage: MessageHandler | null = null;
 
@@ -49,11 +61,12 @@ export function createMqttClient() {
     }
 
     currentClassId = classId;
+    currentClientId = `sender-${classId}-${Math.random().toString(36).slice(2, 8)}`;
     setStatus('connecting');
 
     const url = getBrokerUrl();
     client = mqtt.connect(url, {
-      clientId: `sender-${classId}-${Math.random().toString(36).slice(2, 8)}`,
+      clientId: currentClientId,
       clean: true,
       reconnectPeriod: 3000,
       connectTimeout: 10000,
@@ -120,6 +133,9 @@ export function createMqttClient() {
     },
     get classId() {
       return currentClassId;
+    },
+    get clientId() {
+      return currentClientId;
     },
     connect,
     disconnect,

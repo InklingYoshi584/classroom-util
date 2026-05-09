@@ -9,6 +9,8 @@ export interface CallMessage {
   message: string;
   time: string;
   timestamp: number;
+  senderId?: string;
+  nickname?: string;
 }
 
 export interface HwSyncMessage {
@@ -17,7 +19,16 @@ export interface HwSyncMessage {
   timestamp: number;
 }
 
-export type MqttMessage = CallMessage | HwSyncMessage;
+export interface CallSenderMessage {
+  type: 'call-sender';
+  id: string;
+  targetClientId: string;
+  message: string;
+  time: string;
+  timestamp: number;
+}
+
+export type MqttMessage = CallMessage | HwSyncMessage | CallSenderMessage;
 
 type MessageHandler = (msg: MqttMessage) => void;
 type StatusHandler = (status: MqttStatus) => void;

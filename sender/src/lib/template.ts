@@ -2,7 +2,7 @@ export function renderTemplate(template: string, vars: Record<string, string>): 
   return template.replace(/\{(\w+)\}/g, (_, key: string) => vars[key] ?? `{${key}}`);
 }
 
-export function buildCallMessage(name: string, template: string): string {
+export function buildCallMessage(name: string, template: string, senderId?: string, nickname?: string): string {
   const timestamp = Date.now();
   const timeStr = new Date(timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const message = renderTemplate(template, { name });
@@ -14,10 +14,12 @@ export function buildCallMessage(name: string, template: string): string {
     message,
     time: timeStr,
     timestamp,
+    senderId,
+    nickname,
   });
 }
 
-export function buildCustomMessage(text: string): string {
+export function buildCustomMessage(text: string, senderId?: string, nickname?: string): string {
   const timestamp = Date.now();
   const timeStr = new Date(timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -28,5 +30,7 @@ export function buildCustomMessage(text: string): string {
     message: text,
     time: timeStr,
     timestamp,
+    senderId,
+    nickname,
   });
 }
