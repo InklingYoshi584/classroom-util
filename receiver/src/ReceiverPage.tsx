@@ -31,20 +31,12 @@ export function ReceiverPage() {
   const [configUnlockPin, setConfigUnlockPin] = useState('');
   const [configPinError, setConfigPinError] = useState('');
   const [hwReloadTrigger, setHwReloadTrigger] = useState(0);
-  const [callMode, setCallMode] = useState<'voice' | 'popup' | 'classroom'>(() => {
-    return (localStorage.getItem('classroom-call-mode') as 'voice' | 'popup' | 'classroom') || 'voice';
-  });
   const [schedule, setSchedule] = useState<{ start: string; end: string }[]>([]);
   const [scheduleActive, setScheduleActive] = useState(false);
-  const [showScheduleEditor, setShowScheduleEditor] = useState(false);
-  const [newScheduleStart, setNewScheduleStart] = useState('');
-  const [newScheduleEnd, setNewScheduleEnd] = useState('');
   const [receiverNickname, setReceiverNickname] = useState(() => localStorage.getItem('classroom-receiver-nickname') || '');
 
   const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const callModeRef = useRef(callMode);
   const scheduleActiveRef = useRef(false);
-  callModeRef.current = callMode;
   scheduleActiveRef.current = scheduleActive;
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
@@ -70,15 +62,14 @@ export function ReceiverPage() {
 
         setHistory((h) => [msg, ...h].slice(0, 50));
 
-        const isPopup = callModeRef.current === 'popup' || (callModeRef.current === 'classroom' && scheduleActiveRef.current);
-        if (isPopup) {
-          setCurrentCall(msg);
-          if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
-          popupTimerRef.current = setTimeout(() => setCurrentCall(null), 5000);
+        if (schedule.length > 0) {
+          if (scheduleActiveRef.current) {
+            setCurrentCall(msg);
+            if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+            popupTimerRef.current = setTimeout(() => setCurrentCall(null), 5000);
+          }
           return;
         }
-
-        if (callModeRef.current === 'classroom') return;
 
         setCurrentCall(msg);
 
@@ -133,9 +124,9 @@ export function ReceiverPage() {
 
   // Toggle always-on-top when popup shows
   useEffect(() => {
-    const shouldFloat = currentCall && (callMode === 'popup' || (callMode === 'classroom' && scheduleActive));
+    const shouldFloat = currentCall && schedule.length > 0 && scheduleActive;
     electronApi.setAlwaysOnTop(!!shouldFloat);
-  }, [currentCall, callMode, scheduleActive]);
+  }, [currentCall, schedule, scheduleActive]);
 
   const handleConnect = useCallback(() => {
     const trimmed = classId.trim();
@@ -403,7 +394,7 @@ export function ReceiverPage() {
             )}
 
       <div className="top-actions">
-        {!audioUnlocked && callMode === 'voice' && (
+        {!audioUnlocked && schedule.length === 0 && (
           <button className="audio-enable-btn" onClick={handleEnableAudio}>
             启用语音
           </button>
@@ -413,23 +404,14 @@ export function ReceiverPage() {
         </button>
       </div>
 
-      <div className="mode-bar">
-        {(['voice', 'popup', 'classroom'] as const).map((m) => (
-          <button
-            key={m}
-            className={`mode-btn ${callMode === m ? 'active' : ''}`}
-            onClick={() => {
-              setCallMode(m);
-              localStorage.setItem('classroom-call-mode', m);
-            }}
-          >
-            {{ voice: '语音模式', popup: '弹窗模式', classroom: '课堂模式' }[m]}
-          </button>
-        ))}
-        {callMode === 'classroom' && scheduleActive && (
-          <span className="schedule-active-badge">课堂中</span>
-        )}
-      </div>
+      {schedule.length > 0 && (
+        <div className="schedule-status">
+          <span className={scheduleActive ? 'schedule-active-badge' : 'schedule-idle-badge'}>
+            {scheduleActive ? '课堂中' : '休息中'}
+          </span>
+          <span className="schedule-slots">{schedule.map((s) => `${s.start}-${s.end}`).join(' ')}</span>
+        </div>
+      )}
 
       {showSettings && (
         <div className="settings-panel">
@@ -533,68 +515,10 @@ export function ReceiverPage() {
               保存设置
             </button>
           </div>
-
-          {callMode === 'classroom' && (
-            <div className="schedule-editor">
-              <div className="schedule-header">
-                <span className="schedule-title">课堂时间表</span>
-                <button className="schedule-toggle-btn" onClick={() => setShowScheduleEditor(!showScheduleEditor)}>
-                  {showScheduleEditor ? '收起' : '编辑'}
-                </button>
-              </div>
-
-              {schedule.map((slot, i) => (
-                <div key={i} className="schedule-slot">
-                  <span>{slot.start} — {slot.end}</span>
-                  {showScheduleEditor && (
-                    <button className="schedule-del-btn" onClick={async () => {
-                      const next = schedule.filter((_, j) => j !== i);
-                      setSchedule(next);
-                      const apiBase = serverHost.trim() ? `http://${serverHost.trim()}:8787` : '';
-                      const pwd = prompt('Sudo 密码:');
-                      if (!pwd) return;
-                      await fetch(`${apiBase}/api/schedule/set`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ class: classIdTrimmed, schedule: next, sudo: pwd }),
-                      });
-                    }}>&#10005;</button>
-                  )}
-                </div>
-              ))}
-
-              {showScheduleEditor && (
-                <div className="schedule-add">
-                  <input type="time" value={newScheduleStart} className="schedule-time-input" onChange={(e) => setNewScheduleStart(e.target.value)} />
-                  <span>—</span>
-                  <input type="time" value={newScheduleEnd} className="schedule-time-input" onChange={(e) => setNewScheduleEnd(e.target.value)} />
-                  <button className="schedule-add-btn" onClick={async () => {
-                    if (!newScheduleStart || !newScheduleEnd) return;
-                    const next = [...schedule, { start: newScheduleStart, end: newScheduleEnd }];
-                    setSchedule(next);
-                    setNewScheduleStart('');
-                    setNewScheduleEnd('');
-                    const apiBase = serverHost.trim() ? `http://${serverHost.trim()}:8787` : '';
-                    const pwd = prompt('Sudo 密码:');
-                    if (!pwd) return;
-                    await fetch(`${apiBase}/api/schedule/set`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ class: classIdTrimmed, schedule: next, sudo: pwd }),
-                    });
-                  }}>+</button>
-                </div>
-              )}
-
-              {schedule.length === 0 && (
-                <div className="schedule-empty">暂无课堂时间，点击"编辑"添加</div>
-              )}
-            </div>
-          )}
         </div>
       )}
 
-      {(callMode === 'voice') && (
+      {schedule.length === 0 && (
         <div className={`call-display ${currentCall ? 'active' : 'idle'}`}>
           {currentCall ? (
             <>
@@ -618,7 +542,7 @@ export function ReceiverPage() {
         </div>
       )}
 
-      {(callMode !== 'voice') && currentCall && (
+      {schedule.length > 0 && currentCall && (
         <div className="call-popup">
           <div className="call-popup-name">{currentCall.name}</div>
           <div className="call-popup-msg">{currentCall.message}</div>

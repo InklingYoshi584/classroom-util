@@ -783,44 +783,42 @@
   background: var(--primary-dark);
 }
 
-/* ── Mode bar ── */
-.mode-bar {
+/* ── Schedule status bar ── */
+.schedule-status {
   display: flex;
-  gap: 4px;
-  margin-bottom: 12px;
-}
-
-.mode-btn {
-  flex: 1;
-  padding: 7px 0;
-  border-radius: 6px;
-  border: 1px solid var(--border);
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
   background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
   font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.mode-btn:hover {
-  background: var(--border);
-}
-
-.mode-btn.active {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
 }
 
 .schedule-active-badge {
-  padding: 5px 10px;
+  padding: 3px 10px;
   border-radius: 6px;
   background: var(--success);
   color: #fff;
   font-size: 0.78rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.schedule-idle-badge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: var(--text-secondary);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.schedule-slots {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
 }
 
 /* ── Call popup ── */
@@ -882,90 +880,4 @@
     transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
-}
-
-/* ── Schedule editor ── */
-.schedule-editor {
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.schedule-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.schedule-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.schedule-toggle-btn {
-  font-size: 0.78rem;
-  color: var(--primary);
-  font-weight: 600;
-  background: none;
-}
-
-.schedule-toggle-btn:hover {
-  text-decoration: underline;
-}
-
-.schedule-slot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: var(--bg);
-  font-size: 0.85rem;
-}
-
-.schedule-del-btn {
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  background: #fee2e2;
-  color: var(--error);
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.schedule-add {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.schedule-time-input {
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 0.85rem;
-  background: var(--bg);
-}
-
-.schedule-add-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  background: var(--primary);
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.schedule-empty {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  padding: 4px 0;
 }
