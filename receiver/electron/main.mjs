@@ -55,6 +55,15 @@ ipcMain.handle('export-homework-backup', (_event, classId, data) => {
   }
 });
 
+ipcMain.handle('set-always-on-top', (_event, on) => {
+  const wins = BrowserWindow.getAllWindows();
+  for (const win of wins) {
+    win.setAlwaysOnTop(on);
+    if (on) win.setVisibleOnAllWorkspaces(true);
+    else win.setVisibleOnAllWorkspaces(false);
+  }
+});
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1024,

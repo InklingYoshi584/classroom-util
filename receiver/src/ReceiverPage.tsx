@@ -5,6 +5,7 @@ import { loadTtsSettings, saveTtsSettings, TtsSettings, DEFAULT_TTS } from './li
 import { ttsEngine } from './lib/tts';
 import { getPinStatus, verifyPin } from './lib/pin';
 import { HomeworkTracker } from './HomeworkTracker';
+import { electronApi } from './lib/electronApi';
 import './ReceiverPage.css';
 
 const CLASS_KEY = 'classroom-receiver-class';
@@ -129,6 +130,12 @@ export function ReceiverPage() {
     const interval = setInterval(checkSchedule, 60000);
     return () => clearInterval(interval);
   }, [classId, serverHost]);
+
+  // Toggle always-on-top when popup shows
+  useEffect(() => {
+    const shouldFloat = currentCall && (callMode === 'popup' || (callMode === 'classroom' && scheduleActive));
+    electronApi.setAlwaysOnTop(!!shouldFloat);
+  }, [currentCall, callMode, scheduleActive]);
 
   const handleConnect = useCallback(() => {
     const trimmed = classId.trim();

@@ -2,6 +2,7 @@ interface ElectronHomeworkAPI {
   loadData: (classId: string) => Promise<Record<string, HomeworkDayData>>;
   saveData: (classId: string, data: Record<string, HomeworkDayData>) => Promise<{ ok: boolean; error?: string }>;
   exportBackup: (classId: string, data: Record<string, HomeworkDayData>) => Promise<{ ok: boolean; path?: string; error?: string }>;
+  setAlwaysOnTop: (on: boolean) => Promise<void>;
 }
 
 declare global {
@@ -34,6 +35,11 @@ export const electronApi: ElectronHomeworkAPI = {
     a.click();
     URL.revokeObjectURL(url);
     return { ok: true };
+  },
+  async setAlwaysOnTop(on: boolean) {
+    if (window.electronAPI) {
+      await window.electronAPI.setAlwaysOnTop(on);
+    }
   },
 };
 
