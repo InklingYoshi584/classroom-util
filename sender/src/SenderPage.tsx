@@ -51,13 +51,17 @@ export function SenderPage() {
         setHwReloadTrigger((n) => n + 1);
       }
       if (msg.type === 'call-sender' && msg.targetClientId === mqttRef.current?.clientId) {
-        const text = msg.nickname || msg.classId || '接收端 呼叫了你';
+        const text = `${msg.nickname || msg.classId || '接收端'} 呼叫了你`;
         setToast({ msg: text });
-        try {
-          const u = new SpeechSynthesisUtterance(text);
-          u.lang = 'zh-CN';
-          speechSynthesis.speak(u);
-        } catch {}
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => {
+            try {
+              const u = new SpeechSynthesisUtterance(text);
+              u.lang = 'zh-CN';
+              speechSynthesis.speak(u);
+            } catch {}
+          }, i * 1500);
+        }
       }
     });
 
