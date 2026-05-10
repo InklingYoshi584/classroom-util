@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createMqttClient, MqttClientHandle, MqttStatus, CallMessage } from './lib/mqtt';
 import { buildCallMessage, buildCustomMessage, renderTemplate } from './lib/template';
-import { loadClassId, saveClassId, loadStudents, saveStudents, loadMessageTemplate, saveMessageTemplate, DEFAULT_MSG_TEMPLATE } from './lib/store';
+import { loadClassId, saveClassId, loadStudents, saveStudents, loadMessageTemplate, saveMessageTemplate, loadMessageTemplates, saveMessageTemplates, DEFAULT_MSG_TEMPLATE } from './lib/store';
 import { getPinStatus, verifyPin, setPin, removePin, listPins } from './lib/pin';
 import { parseStudentCsv } from './lib/csv';
 import { HomeworkTracker } from './HomeworkTracker';
@@ -20,6 +20,10 @@ export function SenderPage() {
   const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
   const [history, setHistory] = useState<{ name: string; time: string }[]>([]);
   const [msgTemplate, setMsgTemplate] = useState(() => loadMessageTemplate());
+  const [msgTemplates, setMsgTemplates] = useState<string[]>(() => loadMessageTemplates());
+  const [selectedTemplateIdx, setSelectedTemplateIdx] = useState(0);
+  const [editingTemplateIdx, setEditingTemplateIdx] = useState<number | null>(null);
+  const [editingTemplateVal, setEditingTemplateVal] = useState('');
   const [pinSet, setPinSet] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
@@ -174,7 +178,7 @@ export function SenderPage() {
         return;
       }
     }
-    const raw = buildCallMessage(confirmStudent, msgTemplate, mqttRef.current?.clientId || undefined, senderNickname || undefined);
+    const raw = buildCallMessage(confirmStudent, msgTemplates[selectedTemplateIdx] || msgTemplate, mqttRef.current?.clientId || undefined, senderNickname || undefined);
     const msg: CallMessage = JSON.parse(raw);
     const ok = mqttRef.current?.publish(msg);
     if (ok) {
@@ -445,19 +449,69 @@ export function SenderPage() {
 
           <div className="msg-template-label">消息模板</div>
           {isAdmin ? (
-            <>
-              <input
-                type="text"
-                className="msg-template-input"
-                placeholder={DEFAULT_MSG_TEMPLATE}
-                value={msgTemplate}
-                onChange={(e) => {
-                  setMsgTemplate(e.target.value);
-                  saveMessageTemplate(e.target.value);
-                }}
-              />
+            <div className="msg-templates-editor">
+              {msgTemplates.map((t, i) => (
+                <div key={i} className="msg-template-item">
+                  {editingTemplateIdx === i ? (
+                    <input
+                      type="text"
+                      className="msg-template-input"
+                      value={editingTemplateVal}
+                      onChange={(e) => setEditingTemplateVal(e.target.value)}
+                      onBlur={() => {
+                        if (editingTemplateVal.trim()) {
+                          const next = [...msgTemplates];
+                          next[i] = editingTemplateVal.trim();
+                          setMsgTemplates(next);
+                          saveMessageTemplates(next);
+                        }
+                        setEditingTemplateIdx(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                        if (e.key === 'Escape') setEditingTemplateIdx(null);
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="msg-template-item-text" onClick={() => { setEditingTemplateIdx(i); setEditingTemplateVal(t); }}>{t}</span>
+                  )}
+                  <button className="msg-template-del" onClick={() => {
+                    const next = msgTemplates.filter((_, j) => j !== i);
+                    setMsgTemplates(next);
+                    saveMessageTemplates(next);
+                    if (selectedTemplateIdx >= next.length) setSelectedTemplateIdx(Math.max(0, next.length - 1));
+                  }}>&#10005;</button>
+                </div>
+              ))}
+              <div className="msg-template-add-row">
+                <input
+                  type="text"
+                  className="msg-template-input"
+                  placeholder="新模板..."
+                  value={editingTemplateIdx === -1 ? editingTemplateVal : ''}
+                  onChange={(e) => { setEditingTemplateIdx(-1); setEditingTemplateVal(e.target.value); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && editingTemplateVal.trim()) {
+                      const next = [...msgTemplates, editingTemplateVal.trim()];
+                      setMsgTemplates(next);
+                      saveMessageTemplates(next);
+                      setEditingTemplateIdx(null);
+                      setEditingTemplateVal('');
+                    }
+                  }}
+                />
+                <button className="msg-template-add-btn" onClick={() => {
+                  if (!editingTemplateVal.trim()) return;
+                  const next = [...msgTemplates, editingTemplateVal.trim()];
+                  setMsgTemplates(next);
+                  saveMessageTemplates(next);
+                  setEditingTemplateIdx(null);
+                  setEditingTemplateVal('');
+                }}>+</button>
+              </div>
               <span className="msg-template-hint">{'{name}'} = 学生姓名</span>
-            </>
+            </div>
           ) : (
             <div className="msg-template-lock">
               <span className="msg-template-preview">当前: {msgTemplate}</span>
@@ -630,26 +684,6 @@ export function SenderPage() {
               >
                 {isConnected ? '发送' : '未连接'}
               </button>
-              <button
-                className="call-receiver-btn"
-                disabled={!isConnected}
-                onClick={() => {
-                  if (!isConnected) return;
-                  mqttRef.current?.publish({
-                    type: 'call-sender',
-                    id: crypto.randomUUID?.() ?? `${Date.now()}`,
-                    targetClientId: '',
-                    message: '发送端呼叫',
-                    time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-                    timestamp: Date.now(),
-                    nickname: senderNickname || undefined,
-                    classId: connectedClass,
-                  });
-                  setToast({ msg: '已呼叫接收端' });
-                }}
-              >
-                呼叫接收端
-              </button>
             </div>
           )}
         </>
@@ -675,9 +709,22 @@ export function SenderPage() {
             <div className="student-name-highlight">{confirmStudent || '自定义消息'}</div>
             <div className="preview-text">
               {confirmStudent
-                ? renderTemplate(msgTemplate, { name: confirmStudent })
+                ? renderTemplate(msgTemplates[selectedTemplateIdx] || msgTemplate, { name: confirmStudent })
                 : customText}
             </div>
+            {confirmStudent && msgTemplates.length > 1 && (
+              <div className="template-select-row">
+                <select
+                  className="template-select"
+                  value={selectedTemplateIdx}
+                  onChange={(e) => setSelectedTemplateIdx(Number(e.target.value))}
+                >
+                  {msgTemplates.map((t, i) => (
+                    <option key={i} value={i}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             {pinSet && (
               <div className="pin-row">
                 <input

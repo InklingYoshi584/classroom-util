@@ -1,6 +1,7 @@
 const CLASS_KEY = 'classroom-sender-class';
 const STUDENTS_KEY_PREFIX = 'classroom-students-';
 const MSG_TEMPLATE_KEY = 'classroom-sender-msg-template';
+const MSG_TEMPLATES_KEY = 'classroom-sender-msg-templates';
 
 export const DEFAULT_MSG_TEMPLATE = '请 {name} 同学到前台';
 
@@ -18,6 +19,21 @@ export function loadMessageTemplate(): string {
 
 export function saveMessageTemplate(template: string) {
   localStorage.setItem(MSG_TEMPLATE_KEY, template);
+}
+
+export function loadMessageTemplates(): string[] {
+  try {
+    const raw = localStorage.getItem(MSG_TEMPLATES_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return [loadMessageTemplate()];
+}
+
+export function saveMessageTemplates(templates: string[]) {
+  localStorage.setItem(MSG_TEMPLATES_KEY, JSON.stringify(templates));
 }
 
 export async function loadStudents(classId: string): Promise<string[]> {

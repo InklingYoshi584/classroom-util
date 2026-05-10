@@ -859,3 +859,87 @@
   background: var(--border);
   transform: rotate(30deg);
 }
+
+/* ── Multi-template editor ── */
+.msg-templates-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.msg-template-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+.msg-template-item-text {
+  flex: 1;
+  font-size: 0.82rem;
+  color: var(--text);
+  cursor: pointer;
+  padding: 2px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.msg-template-item-text:hover {
+  color: var(--primary);
+}
+
+.msg-template-del {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: var(--error);
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.msg-template-add-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.msg-template-add-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Template selector in confirm dialog ── */
+.template-select-row {
+  margin-bottom: 8px;
+}
+
+.template-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.template-select:focus {
+  border-color: var(--primary);
+  outline: none;
+}
