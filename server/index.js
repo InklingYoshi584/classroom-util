@@ -49,6 +49,7 @@ const pinSet = new Set(persisted.pins || []);
 const studentsMap = persisted.students || {};
 const hwMap = persisted.hwData || {};
 const scheduleMap = persisted.schedules || {};
+const messageCache = {}; // classId -> messages[]
 
 // ── JSON body parser (must come before routes) ──
 app.use(express.json());
@@ -171,6 +172,12 @@ app.post('/api/schedule/set', (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Recent messages cache API ──
+app.get('/api/messages/recent', (req, res) => {
+  const cls = req.query.class || '';
+  res.json({ messages: messageCache[cls] || [] });
+});
+
 // ── Serve sender SPA ──
 const hasSender = fs.existsSync(SENDER_DIR);
 
@@ -212,6 +219,20 @@ broker.on('publish', (packet, client) => {
   if (client) {
     const payload = packet.payload?.toString()?.slice(0, 100) || '';
     console.log(`[MQTT] ${packet.topic} <- ${payload}`);
+
+    const topic = packet.topic || '';
+    const parts = topic.split('/');
+    if (parts.length === 2 && parts[0] === 'classroom') {
+      const classId = parts[1];
+      try {
+        const msg = JSON.parse(packet.payload?.toString() || '{}');
+        if (msg.type === 'call-student') {
+          if (!messageCache[classId]) messageCache[classId] = [];
+          messageCache[classId].push(msg);
+          if (messageCache[classId].length > 5) messageCache[classId].shift();
+        }
+      } catch {}
+    }
   }
 });
 

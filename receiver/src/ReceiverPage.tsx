@@ -128,6 +128,33 @@ export function ReceiverPage() {
     electronApi.setAlwaysOnTop(!!shouldFloat);
   }, [currentCall, schedule, scheduleActive]);
 
+  // Fetch cached messages on reconnect
+  useEffect(() => {
+    if (status !== 'connected' || !classIdTrimmed) return;
+    const apiBase = serverHost.trim() ? `http://${serverHost.trim()}:8787` : '';
+    fetch(`${apiBase}/api/messages/recent?class=${encodeURIComponent(classIdTrimmed)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        const msgs = d.messages || [];
+        let last: CallMessage | null = null;
+        for (const msg of msgs) {
+          if (seenIdsRef.current.has(msg.id)) continue;
+          seenIdsRef.current.add(msg.id);
+          last = msg;
+        }
+        if (last) {
+          setCurrentCall(last);
+          setHistory((h) => {
+            const ids = new Set(h.map((m) => m.id));
+            const newMsgs = msgs.filter((m: CallMessage) => !ids.has(m.id));
+            return [...newMsgs, ...h].slice(0, 50);
+          });
+        }
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
   const handleConnect = useCallback(() => {
     const trimmed = classId.trim();
     if (!trimmed) return;
