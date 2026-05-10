@@ -20,6 +20,31 @@
   color: var(--primary-dark);
 }
 
+.sender-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.help-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  transition: background 0.15s;
+}
+
+.help-btn:hover {
+  background: var(--border);
+}
+
 .connection-bar {
   display: flex;
   align-items: center;
@@ -978,4 +1003,64 @@
 
 .schedule-clear-btn:hover {
   background: var(--border);
+}
+
+/* ── Help modal ── */
+.help-modal {
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 24px;
+  width: 90%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn 0.2s;
+}
+
+.help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.help-header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.help-section {
+  margin-bottom: 14px;
+}
+
+.help-section h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.help-section p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.help-section code {
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.help-section ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.help-section li {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
 }

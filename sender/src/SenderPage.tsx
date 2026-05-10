@@ -28,6 +28,7 @@ export function SenderPage() {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [sudoAuthed, setSudoAuthed] = useState(false);
   const [sudoPassword, setSudoPassword] = useState('');
   const [sudoNewPin, setSudoNewPin] = useState('');
@@ -340,9 +341,12 @@ export function SenderPage() {
     <div className="sender-page">
       <div className="sender-header">
         <h1>Classroom Caller · 发送端</h1>
-        <button className="settings-gear-btn" onClick={() => { setAdminPin(''); setAdminPinError(''); setShowSettings(!showSettings); }} title="设置">
-          &#9881;
-        </button>
+        <div className="sender-actions">
+          <button className="help-btn" onClick={() => setShowHelp(true)} title="帮助">?</button>
+          <button className="settings-gear-btn" onClick={() => { setAdminPin(''); setAdminPinError(''); setShowSettings(!showSettings); }} title="设置">
+            &#9881;
+          </button>
+        </div>
       </div>
 
       <div className={`connection-bar ${status}`}>
@@ -610,6 +614,71 @@ export function SenderPage() {
             }}
           />
           <span className="msg-template-hint">接收端可以看到此昵称</span>
+        </div>
+      )}
+
+      {showHelp && (
+        <div className="overlay" onClick={() => setShowHelp(false)}>
+          <div className="help-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="help-header">
+              <h2>使用帮助</h2>
+              <button className="close-btn" onClick={() => setShowHelp(false)}>&#10005;</button>
+            </div>
+
+            <div className="help-section">
+              <h3>📞 呼叫学生</h3>
+              <p>先输入班级 ID（如 <code>g8c</code>）点击连接，然后点击学生姓名就能发起语音呼叫。学生姓名下方的预览会显示实际播报的内容。</p>
+            </div>
+
+            <div className="help-section">
+              <h3>🔒 Admin 模式（管理学生 / 消息模板）</h3>
+              <p>点击⚙设置 → 输入 PIN 进入 Admin 模式。解锁后可以添加或删除学生、导入 CSV 名单、管理多条消息模板。</p>
+            </div>
+
+            <div className="help-section">
+              <h3>🔑 Sudo 模式（管理 PIN / 课表）</h3>
+              <p>输入 Sudo 密码进入 Sudo 模式。可以添加/删除 PIN 码，以及设置上课时间表。课表导入支持 <code>.txt</code> 文件，格式：每行一个时间段，例如 <code>10:10-10:50</code>。</p>
+            </div>
+
+            <div className="help-section">
+              <h3>📝 自定义消息</h3>
+              <p>在"自定义消息"标签页，输入任意文字发送到接收端。可以用作通知、提醒等。</p>
+            </div>
+
+            <div className="help-section">
+              <h3>📚 作业追踪</h3>
+              <p>在"作业"标签页管理每日任务。点击单元格切换未交/已交/请假状态。支持导出图片和 Excel，也可以导入之前备份的 JSON 数据。</p>
+            </div>
+
+            <div className="help-section">
+              <h3>🔄 多消息模板</h3>
+              <p>Admin 模式下可以添加多条消息模板，发送呼叫时可以选择用哪一条。支持添加、编辑（点击文本）、删除模板。</p>
+            </div>
+
+            <div className="help-section">
+              <h3>👤 发送者昵称</h3>
+              <p>设置昵称后，接收端的呼叫记录里会显示是谁发送的。</p>
+            </div>
+
+            <div className="help-section">
+              <h3>🕐 上课时间表</h3>
+              <p>Sudo 模式下可以设置课表。上课时段呼叫自动弹窗显示（5秒后消失），下课期间正常播放语音。仅在 Electron 桌面版弹窗窗口会置顶。</p>
+            </div>
+
+            <div className="help-section">
+              <h3>📋 接收端操作</h3>
+              <p>接收端也要输入同样的班级 ID 来订阅频道。在呼叫记录中可以点"呼叫老师"回呼发送端。首次使用需要先点"启用语音"解锁语音播报。</p>
+            </div>
+
+            <div className="help-section">
+              <h3>💡 小提示</h3>
+              <ul>
+                <li>发送端页面由服务器托管，其他设备浏览器直接访问 <code>http://服务器IP:8787</code></li>
+                <li>PIN 码默认不需要，首次设置后才会启用</li>
+                <li>消息模板变量 <code>{'{name}'}</code> 会自动替换为学生姓名</li>
+              </ul>
+            </div>
+          </div>
         </div>
       )}
 
