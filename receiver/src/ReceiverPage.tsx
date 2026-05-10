@@ -67,8 +67,8 @@ export function ReceiverPage() {
             setCurrentCall(msg);
             if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
             popupTimerRef.current = setTimeout(() => setCurrentCall(null), 5000);
+            return;
           }
-          return;
         }
 
         setCurrentCall(msg);
@@ -518,7 +518,7 @@ export function ReceiverPage() {
         </div>
       )}
 
-      {schedule.length === 0 && (
+      {(schedule.length === 0 || !scheduleActive) && (
         <div className={`call-display ${currentCall ? 'active' : 'idle'}`}>
           {currentCall ? (
             <>
@@ -542,7 +542,7 @@ export function ReceiverPage() {
         </div>
       )}
 
-      {schedule.length > 0 && currentCall && (
+      {schedule.length > 0 && scheduleActive && currentCall && (
         <div className="call-popup">
           <div className="call-popup-name">{currentCall.name}</div>
           <div className="call-popup-msg">{currentCall.message}</div>
