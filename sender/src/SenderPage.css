@@ -923,3 +923,59 @@
   border-color: var(--primary);
   outline: none;
 }
+
+/* ── Schedule import ── */
+.schedule-import-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 0.85rem;
+  font-family: monospace;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.schedule-textarea:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.schedule-import-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.schedule-save-btn {
+  padding: 7px 16px;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.schedule-save-btn:hover {
+  background: var(--primary-dark);
+}
+
+.schedule-clear-btn {
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.schedule-clear-btn:hover {
+  background: var(--border);
+}

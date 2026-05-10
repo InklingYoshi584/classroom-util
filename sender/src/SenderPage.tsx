@@ -41,6 +41,8 @@ export function SenderPage() {
   const [adminPinError, setAdminPinError] = useState('');
   const [hwReloadTrigger, setHwReloadTrigger] = useState(0);
   const [senderNickname, setSenderNickname] = useState(() => localStorage.getItem('classroom-sender-nickname') || '');
+  const [scheduleText, setScheduleText] = useState('');
+  const scheduleFileRef = useRef<HTMLInputElement>(null);
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -257,6 +259,14 @@ export function SenderPage() {
         const list = await listPins(sudoPassword);
         setPinList(list);
         setPinSet(list.length > 0);
+
+        const scheduleRes = await fetch(`/api/schedule?class=${encodeURIComponent(connectedClass)}`);
+        const scheduleData = await scheduleRes.json();
+        if (scheduleData.schedule && scheduleData.schedule.length > 0) {
+          setScheduleText(scheduleData.schedule.map((s: { start: string; end: string }) => `${s.start}-${s.end}`).join('\n'));
+        } else {
+          setScheduleText('');
+        }
       } else {
         setSudoError('Sudo 密码错误');
       }
@@ -444,6 +454,75 @@ export function SenderPage() {
                   ))}
                 </div>
               )}
+
+              <div className="msg-template-label" style={{ marginTop: 8 }}>课堂时间表</div>
+              <div className="schedule-import-row">
+                <textarea
+                  className="schedule-textarea"
+                  rows={3}
+                  placeholder={`格式: 每行一个时间段\n10:10-10:50\n13:30-15:00`}
+                  value={scheduleText}
+                  onChange={(e) => setScheduleText(e.target.value)}
+                />
+                <div className="schedule-import-actions">
+                  <input
+                    ref={scheduleFileRef}
+                    type="file"
+                    accept=".txt"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setScheduleText(reader.result as string);
+                        setToast({ msg: '已导入课表文件' });
+                      };
+                      reader.readAsText(file);
+                      e.target.value = '';
+                    }}
+                  />
+                  <button className="csv-import-btn" onClick={() => scheduleFileRef.current?.click()}>
+                    导入文件
+                  </button>
+                  <button className="schedule-save-btn" onClick={async () => {
+                    const lines = scheduleText.split('\n')
+                      .map((l) => l.trim())
+                      .filter((l) => l.length > 0);
+                    const schedule: { start: string; end: string }[] = [];
+                    for (const line of lines) {
+                      const parts = line.replace(/\s/g, '').split('-');
+                      if (parts.length === 2 && /^\d{2}:\d{2}$/.test(parts[0]) && /^\d{2}:\d{2}$/.test(parts[1])) {
+                        schedule.push({ start: parts[0], end: parts[1] });
+                      }
+                    }
+                    if (schedule.length === 0 && lines.length > 0) {
+                      setToast({ msg: '格式错误，请使用 HH:MM-HH:MM 每行一个', error: true });
+                      return;
+                    }
+                    try {
+                      const r = await fetch('/api/schedule/set', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ class: connectedClass, schedule, sudo: sudoPassword }),
+                      });
+                      const d = await r.json();
+                      if (d.ok) {
+                        setToast({ msg: schedule.length === 0 ? '已清空课表' : `已保存 ${schedule.length} 个时间段` });
+                      } else {
+                        setToast({ msg: d.error || '保存失败', error: true });
+                      }
+                    } catch {
+                      setToast({ msg: '网络错误', error: true });
+                    }
+                  }}>
+                    保存课表
+                  </button>
+                  {scheduleText.trim() && (
+                    <button className="schedule-clear-btn" onClick={() => setScheduleText('')}>清空</button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
