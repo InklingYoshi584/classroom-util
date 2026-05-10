@@ -235,6 +235,26 @@
   cursor: not-allowed;
 }
 
+.call-receiver-btn {
+  width: 100%;
+  padding: 10px 24px;
+  border-radius: var(--radius);
+  background: #7c3aed;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.15s;
+}
+
+.call-receiver-btn:hover {
+  background: #6d28d9;
+}
+
+.call-receiver-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
 .student-list {
   flex: 1;
   overflow-y: auto;

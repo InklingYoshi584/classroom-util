@@ -38,6 +38,7 @@ export function ReceiverPage() {
   const [showScheduleEditor, setShowScheduleEditor] = useState(false);
   const [newScheduleStart, setNewScheduleStart] = useState('');
   const [newScheduleEnd, setNewScheduleEnd] = useState('');
+  const [receiverNickname, setReceiverNickname] = useState(() => localStorage.getItem('classroom-receiver-nickname') || '');
 
   const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const callModeRef = useRef(callMode);
@@ -83,6 +84,15 @@ export function ReceiverPage() {
         const vars = { name: msg.name, message: msg.message, time: msg.time };
         const text = renderTemplate(ttsSettingsRef.current.template || DEFAULT_TTS.template, vars);
         ttsEngine.speak(text, { ...ttsSettingsRef.current, enabled: true });
+      }
+      if (msg.type === 'call-sender' && !msg.targetClientId) {
+        if (seenIdsRef.current.has(msg.id)) return;
+        seenIdsRef.current.add(msg.id);
+        const callText = msg.nickname ? `${msg.nickname} 呼叫了你` : '发送端呼叫';
+        ttsEngine.speak(callText, { ...ttsSettingsRef.current, enabled: true });
+        const historyEntry: CallMessage = { type: 'call-student', id: msg.id, name: callText, message: callText, time: msg.time, timestamp: msg.timestamp };
+        setCurrentCall(historyEntry);
+        setHistory((h) => [historyEntry, ...h].slice(0, 50));
       }
     });
 
@@ -495,6 +505,19 @@ export function ReceiverPage() {
             预览: {previewTemplate(ttsSettings.template || DEFAULT_TTS.template)}
           </div>
 
+          <label>
+            接收端昵称
+            <input
+              type="text"
+              placeholder="如: 教室前端"
+              value={receiverNickname}
+              onChange={(e) => {
+                setReceiverNickname(e.target.value);
+                localStorage.setItem('classroom-receiver-nickname', e.target.value);
+              }}
+            />
+          </label>
+
           <div className="settings-actions">
             <button className="test-btn" onClick={handleTestSpeak}>
               测试朗读
@@ -619,6 +642,7 @@ export function ReceiverPage() {
                     message: '接收端呼叫',
                     time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
                     timestamp: Date.now(),
+                    nickname: receiverNickname || undefined,
                   });
                 }}>呼回</button>
               )}

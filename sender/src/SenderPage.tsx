@@ -51,7 +51,13 @@ export function SenderPage() {
         setHwReloadTrigger((n) => n + 1);
       }
       if (msg.type === 'call-sender' && msg.targetClientId === mqttRef.current?.clientId) {
-        setToast({ msg: `接收端呼叫: ${msg.message}` });
+        const text = msg.nickname ? `${msg.nickname} 呼叫了你` : '接收端呼叫';
+        setToast({ msg: text });
+        try {
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = 'zh-CN';
+          speechSynthesis.speak(u);
+        } catch {}
       }
     });
 
@@ -619,6 +625,25 @@ export function SenderPage() {
                 disabled={!customText.trim() || !isConnected}
               >
                 {isConnected ? '发送' : '未连接'}
+              </button>
+              <button
+                className="call-receiver-btn"
+                disabled={!isConnected}
+                onClick={() => {
+                  if (!isConnected) return;
+                  mqttRef.current?.publish({
+                    type: 'call-sender',
+                    id: crypto.randomUUID?.() ?? `${Date.now()}`,
+                    targetClientId: '',
+                    message: '发送端呼叫',
+                    time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                    timestamp: Date.now(),
+                    nickname: senderNickname || undefined,
+                  });
+                  setToast({ msg: '已呼叫接收端' });
+                }}
+              >
+                呼叫接收端
               </button>
             </div>
           )}

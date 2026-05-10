@@ -26,6 +26,7 @@ export interface CallSenderMessage {
   message: string;
   time: string;
   timestamp: number;
+  nickname?: string;
 }
 
 export type MqttMessage = CallMessage | HwSyncMessage | CallSenderMessage;
