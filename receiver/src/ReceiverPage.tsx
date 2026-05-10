@@ -627,25 +627,46 @@ export function ReceiverPage() {
               清空
             </button>
           </div>
+          <div className="callback-row">
+            <select
+              className="callback-select"
+              value=""
+              onChange={(e) => {
+                const val = e.target.value;
+                if (!val) return;
+                mqttRef.current?.publish({
+                  type: 'call-sender',
+                  id: crypto.randomUUID?.() ?? `${Date.now()}`,
+                  targetClientId: val,
+                  message: '接收端呼叫',
+                  time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                  timestamp: Date.now(),
+                  nickname: receiverNickname || undefined,
+                  classId: classIdTrimmed,
+                });
+                e.target.value = '';
+              }}
+            >
+              <option value="">呼叫老师...</option>
+              {(() => {
+                const seen = new Map<string, string>();
+                history.forEach((h) => {
+                  if (h.senderId && h.nickname && !seen.has(h.senderId)) {
+                    seen.set(h.senderId, h.nickname);
+                  }
+                });
+                return [...seen].map(([id, nick]) => (
+                  <option key={id} value={id}>{nick}</option>
+                ));
+              })()}
+            </select>
+          </div>
           {history.map((h) => (
             <div key={h.id} className="history-item">
               <span className="dot" />
               <span>{h.name}</span>
               {h.nickname && <span className="sender-nick">{h.nickname}</span>}
               <span className="time">{h.time}</span>
-              {h.senderId && (
-                <button className="callback-btn" onClick={() => {
-                  mqttRef.current?.publish({
-                    type: 'call-sender',
-                    id: crypto.randomUUID?.() ?? `${Date.now()}`,
-                    targetClientId: h.senderId!,
-                    message: '接收端呼叫',
-                    time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-                    timestamp: Date.now(),
-                    nickname: receiverNickname || undefined,
-                  });
-                }}>呼回</button>
-              )}
               <button className="replay-sm" onClick={() => handleReplayHistory(h)}>
                 重播
               </button>

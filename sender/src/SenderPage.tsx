@@ -51,7 +51,7 @@ export function SenderPage() {
         setHwReloadTrigger((n) => n + 1);
       }
       if (msg.type === 'call-sender' && msg.targetClientId === mqttRef.current?.clientId) {
-        const text = msg.nickname ? `${msg.nickname} 呼叫了你` : '接收端呼叫';
+        const text = msg.nickname || msg.classId || '接收端 呼叫了你';
         setToast({ msg: text });
         try {
           const u = new SpeechSynthesisUtterance(text);
@@ -639,6 +639,7 @@ export function SenderPage() {
                     time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
                     timestamp: Date.now(),
                     nickname: senderNickname || undefined,
+                    classId: connectedClass,
                   });
                   setToast({ msg: '已呼叫接收端' });
                 }}

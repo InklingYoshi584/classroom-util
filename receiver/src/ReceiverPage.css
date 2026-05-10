@@ -656,6 +656,26 @@
   background: var(--primary-dark);
 }
 
+.callback-row {
+  margin-bottom: 8px;
+}
+
+.callback-select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-card);
+  font-size: 0.82rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.callback-select:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
 .audio-warning {
   background: #fef3c7;
   color: #92400e;
