@@ -345,14 +345,17 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
             };
           }
         }
-        const merged = { ...allData, ...clean };
-        setAllData(merged);
-        setDataChanged(true);
-        fetch(`${apiBase}/api/hw/save`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ class: classId, data: merged }),
-        }).then(() => onDataSaved?.()).catch(() => {});
+        fetch(`${apiBase}/api/hw/load?class=${encodeURIComponent(classId)}`)
+          .then((r) => r.json())
+          .then((d) => {
+            const serverData = d.data || {};
+            const merged = { ...serverData, ...clean };
+            fetch(`${apiBase}/api/hw/save`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ class: classId, data: merged }),
+            }).then(() => onDataSaved?.()).catch(() => setToast({ msg: '服务器保存失败', error: true }));
+          });
         setToast({ msg: `已导入 ${dateKeys.length} 天数据` });
       } catch {
         setToast({ msg: 'JSON 解析失败', error: true });
