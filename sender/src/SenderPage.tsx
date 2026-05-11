@@ -261,7 +261,7 @@ export function SenderPage() {
         setPinList(list);
         setPinSet(list.length > 0);
 
-        const scheduleRes = await fetch(`/api/schedule?class=${encodeURIComponent(connectedClass)}`);
+        const scheduleRes = await fetch(`/api/schedule`);
         const scheduleData = await scheduleRes.json();
         if (scheduleData.schedule && scheduleData.schedule.length > 0) {
           setScheduleText(scheduleData.schedule.map((s: { start: string; end: string }) => `${s.start}-${s.end}`).join('\n'));
