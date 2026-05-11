@@ -494,10 +494,12 @@ export function SenderPage() {
                       .map((l) => l.trim())
                       .filter((l) => l.length > 0);
                     const schedule: { start: string; end: string }[] = [];
+                    const timeRe = /^\d{1,2}:\d{2}$/;
                     for (const line of lines) {
-                      const parts = line.replace(/\s/g, '').split('-');
-                      if (parts.length === 2 && /^\d{2}:\d{2}$/.test(parts[0]) && /^\d{2}:\d{2}$/.test(parts[1])) {
-                        schedule.push({ start: parts[0], end: parts[1] });
+                      const parts = line.replace(/\s/g, '').replace(/[–—]/g, '-').split('-');
+                      const zeroPad = (s: string) => s.padStart(5, '0');
+                      if (parts.length === 2 && timeRe.test(parts[0]) && timeRe.test(parts[1])) {
+                        schedule.push({ start: zeroPad(parts[0]), end: zeroPad(parts[1]) });
                       }
                     }
                     if (schedule.length === 0 && lines.length > 0) {
@@ -508,7 +510,7 @@ export function SenderPage() {
                       const r = await fetch('/api/schedule/set', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ class: connectedClass, schedule, sudo: sudoPassword }),
+                        body: JSON.stringify({ schedule, sudo: sudoPassword }),
                       });
                       const d = await r.json();
                       if (d.ok) {

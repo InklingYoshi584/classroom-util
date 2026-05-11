@@ -41,14 +41,14 @@ function saveData(data) {
 }
 
 function persist() {
-  saveData({ pins: [...pinSet], students: studentsMap, hwData: hwMap, schedules: scheduleMap });
+  saveData({ pins: [...pinSet], students: studentsMap, hwData: hwMap, schedules: globalSchedule });
 }
 
 const persisted = loadData();
 const pinSet = new Set(persisted.pins || []);
 const studentsMap = persisted.students || {};
 const hwMap = persisted.hwData || {};
-const scheduleMap = persisted.schedules || {};
+let globalSchedule = persisted.schedules || [];
 const messageCache = {}; // classId -> messages[]
 
 // ── JSON body parser (must come before routes) ──
@@ -152,23 +152,22 @@ app.post('/api/hw/save', (req, res) => {
   res.json({ ok: true });
 });
 
-// ── Classroom schedule API ──
-app.get('/api/schedule', (req, res) => {
-  const cls = req.query.class || '';
-  res.json({ schedule: scheduleMap[cls] || [] });
+// ── Classroom schedule API (global) ──
+app.get('/api/schedule', (_req, res) => {
+  res.json({ schedule: globalSchedule });
 });
 
 app.post('/api/schedule/set', (req, res) => {
-  const { class: cls, schedule, sudo } = req.body || {};
+  const { schedule, sudo } = req.body || {};
   if (sudo !== SUDO_PASSWORD) {
     return res.status(403).json({ ok: false, error: 'Sudo 密码错误' });
   }
-  if (!cls || !Array.isArray(schedule)) {
+  if (!Array.isArray(schedule)) {
     return res.status(400).json({ ok: false, error: '参数错误' });
   }
-  scheduleMap[cls] = schedule;
+  globalSchedule = schedule;
   persist();
-  console.log(`[DATA] schedule for ${cls}: ${schedule.length} slots`);
+  console.log(`[DATA] schedule: ${schedule.length} slots`);
   res.json({ ok: true });
 });
 

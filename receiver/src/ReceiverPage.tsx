@@ -105,7 +105,7 @@ export function ReceiverPage() {
     if (!classId.trim()) return;
     const apiBase = serverHost ? `http://${serverHost}:8787` : '';
     const checkSchedule = () => {
-      fetch(`${apiBase}/api/schedule?class=${encodeURIComponent(classId.trim())}`)
+      fetch(`${apiBase}/api/schedule`)
         .then((r) => r.json())
         .then((d) => {
           const s = d.schedule || [];
