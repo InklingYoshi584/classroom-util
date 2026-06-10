@@ -62,6 +62,11 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
   const [exportFormat, setExportFormat] = useState<'table' | 'missing'>('table');
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const allDataRef = useRef(allData);
+  const dirtyDatesRef = useRef<Set<string>>(new Set());
+
+  // Sync ref with latest allData
+  useEffect(() => { allDataRef.current = allData; }, [allData]);
 
   const dayData = allData[currentDate] || { tasks: [], taskStatuses: {}, todayTaskContent: '' };
 
@@ -109,21 +114,33 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
       .then((r) => r.json())
       .then((d) => {
         setAllData(d.data || {});
+        dirtyDatesRef.current.clear();
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reloadTrigger]);
 
-  // Auto-save when data changes — save to server and local
+  // Auto-save when data changes — save only dirty dates to server
   useEffect(() => {
     if (!dataChanged) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      fetch(`${apiBase}/api/hw/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ class: classId, data: allData }),
-      }).then(() => onDataSaved?.()).catch(() => setToast({ msg: '服务器保存失败', error: true }));
+      const dates = [...dirtyDatesRef.current];
+      if (dates.length === 0) return;
+      const allData = allDataRef.current;
+      const saves = dates.map((date) => {
+        const dayData = allData[date];
+        if (!dayData) return Promise.resolve();
+        return fetch(`${apiBase}/api/hw/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ class: classId, date, data: dayData }),
+        });
+      });
+      Promise.all(saves).then(() => {
+        dirtyDatesRef.current.clear();
+        onDataSaved?.();
+      }).catch(() => setToast({ msg: '服务器保存失败', error: true }));
       electronApi.saveData(classId, allData).then((r) => {
         if (!r.ok && (window as any).electronAPI) setToast({ msg: '本地保存失败', error: true });
       });
@@ -132,13 +149,14 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [dataChanged, allData, classId, apiBase]);
+  }, [dataChanged, classId, apiBase, onDataSaved]);
 
   const updateDay = useCallback((date: string, updater: (d: HomeworkDayData) => HomeworkDayData) => {
     setAllData((prev) => {
       const current = prev[date] || { tasks: [], taskStatuses: {}, todayTaskContent: '' };
       return { ...prev, [date]: updater(current) };
     });
+    dirtyDatesRef.current.add(date);
     setDataChanged(true);
   }, []);
 
@@ -345,17 +363,17 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
             };
           }
         }
-        fetch(`${apiBase}/api/hw/load?class=${encodeURIComponent(classId)}`)
-          .then((r) => r.json())
-          .then((d) => {
-            const serverData = d.data || {};
-            const merged = { ...serverData, ...clean };
-            fetch(`${apiBase}/api/hw/save`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ class: classId, data: merged }),
-            }).then(() => onDataSaved?.()).catch(() => setToast({ msg: '服务器保存失败', error: true }));
-          });
+        const saves = dateKeys.map((date) =>
+          fetch(`${apiBase}/api/hw/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ class: classId, date, data: clean[date] }),
+          })
+        );
+        Promise.all(saves).then(() => {
+          setAllData((prev) => ({ ...prev, ...clean }));
+          onDataSaved?.();
+        }).catch(() => setToast({ msg: '服务器保存失败', error: true }));
         setToast({ msg: `已导入 ${dateKeys.length} 天数据` });
       } catch {
         setToast({ msg: 'JSON 解析失败', error: true });

@@ -20,6 +20,7 @@ const broker = aedes();
 
 // ── File persistence ──
 const DATA_FILE = path.join(__dirname, 'data.json');
+const HW_DIR = path.join(__dirname, 'hw');
 
 function loadData() {
   try {
@@ -41,15 +42,64 @@ function saveData(data) {
 }
 
 function persist() {
-  saveData({ pins: [...pinSet], students: studentsMap, hwData: hwMap, schedules: globalSchedule });
+  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule });
+}
+
+// ── Daily homework file helpers ──
+function ensureHwDir(cls) {
+  const dir = path.join(HW_DIR, cls);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function saveHwDay(cls, date, data) {
+  const dir = ensureHwDir(cls);
+  fs.writeFileSync(path.join(dir, `${date}.json`), JSON.stringify(data, null, 2), 'utf8');
+}
+
+function loadHwAll(cls) {
+  const dir = path.join(HW_DIR, cls);
+  const result = {};
+  if (!fs.existsSync(dir)) return result;
+  let files;
+  try { files = fs.readdirSync(dir); } catch { return result; }
+  for (const f of files) {
+    if (!f.endsWith('.json')) continue;
+    try {
+      const date = f.slice(0, -5);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        result[date] = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+      }
+    } catch {}
+  }
+  return result;
+}
+
+function deleteHwDay(cls, date) {
+  const fp = path.join(HW_DIR, cls, `${date}.json`);
+  if (fs.existsSync(fp)) fs.unlinkSync(fp);
 }
 
 const persisted = loadData();
 const pinSet = new Set(persisted.pins || []);
 const studentsMap = persisted.students || {};
-const hwMap = persisted.hwData || {};
 let globalSchedule = persisted.schedules || [];
 const messageCache = {}; // classId -> messages[]
+
+// ── Auto-migrate legacy hwData from data.json to daily files ──
+if (persisted.hwData && Object.keys(persisted.hwData).length > 0) {
+  let count = 0;
+  for (const cls of Object.keys(persisted.hwData)) {
+    const days = persisted.hwData[cls] || {};
+    for (const date of Object.keys(days)) {
+      saveHwDay(cls, date, days[date]);
+      count++;
+    }
+  }
+  delete persisted.hwData;
+  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule });
+  console.log(`[DATA] auto-migrated ${count} hw entries to daily files`);
+}
 
 // ── JSON body parser (must come before routes) ──
 app.use(express.json());
@@ -138,18 +188,50 @@ app.post('/api/students/set', (req, res) => {
 // ── Homework tracker API ──
 app.get('/api/hw/load', (req, res) => {
   const cls = req.query.class || '';
-  res.json({ data: hwMap[cls] || {} });
+  res.json({ data: loadHwAll(cls) });
 });
 
 app.post('/api/hw/save', (req, res) => {
-  const { class: cls, data } = req.body || {};
-  if (!cls || typeof data !== 'object') {
+  const { class: cls, date, data } = req.body || {};
+  if (!cls || !date || typeof data !== 'object') {
     return res.status(400).json({ ok: false, error: '参数错误' });
   }
-  hwMap[cls] = data;
-  persist();
-  console.log(`[DATA] hw for ${cls}: saved`);
+  saveHwDay(cls, date, data);
+  console.log(`[DATA] hw for ${cls}/${date}: saved`);
   res.json({ ok: true });
+});
+
+app.post('/api/hw/delete', (req, res) => {
+  const { class: cls, date } = req.body || {};
+  if (!cls || !date) {
+    return res.status(400).json({ ok: false, error: '参数错误' });
+  }
+  deleteHwDay(cls, date);
+  console.log(`[DATA] hw for ${cls}/${date}: deleted`);
+  res.json({ ok: true });
+});
+
+app.post('/api/hw/migrate', (req, res) => {
+  const { sudo } = req.body || {};
+  if (sudo !== SUDO_PASSWORD) {
+    return res.status(403).json({ ok: false, error: 'Sudo 密码错误' });
+  }
+  const legacy = persisted.hwData || {};
+  if (Object.keys(legacy).length === 0) {
+    return res.json({ ok: true, count: 0, message: '没有需要迁移的数据' });
+  }
+  let count = 0;
+  for (const cls of Object.keys(legacy)) {
+    const days = legacy[cls] || {};
+    for (const date of Object.keys(days)) {
+      saveHwDay(cls, date, days[date]);
+      count++;
+    }
+  }
+  delete persisted.hwData;
+  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule });
+  console.log(`[DATA] manual migrate: ${count} hw entries to daily files`);
+  res.json({ ok: true, count });
 });
 
 // ── Classroom schedule API (global) ──
