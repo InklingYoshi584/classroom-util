@@ -1,8 +1,15 @@
+export interface ReceiverConfig {
+  classId?: string;
+  serverHost?: string;
+}
+
 interface ElectronHomeworkAPI {
   loadData: (classId: string) => Promise<Record<string, HomeworkDayData>>;
   saveData: (classId: string, data: Record<string, HomeworkDayData>) => Promise<{ ok: boolean; error?: string }>;
   exportBackup: (classId: string, data: Record<string, HomeworkDayData>) => Promise<{ ok: boolean; path?: string; error?: string }>;
   setAlwaysOnTop: (on: boolean) => Promise<void>;
+  loadConfig: () => Promise<ReceiverConfig>;
+  saveConfig: (config: ReceiverConfig) => Promise<{ ok: boolean; error?: string }>;
 }
 
 declare global {
@@ -40,6 +47,19 @@ export const electronApi: ElectronHomeworkAPI = {
     if (window.electronAPI) {
       await window.electronAPI.setAlwaysOnTop(on);
     }
+  },
+  async loadConfig(): Promise<ReceiverConfig> {
+    if (window.electronAPI) return window.electronAPI.loadConfig();
+    return {
+      serverHost: localStorage.getItem('classroom-receiver-server-host') || '',
+      classId: localStorage.getItem('classroom-receiver-class') || '',
+    };
+  },
+  async saveConfig(config: ReceiverConfig) {
+    if (window.electronAPI) return window.electronAPI.saveConfig(config);
+    if (config.serverHost !== undefined) localStorage.setItem('classroom-receiver-server-host', config.serverHost);
+    if (config.classId !== undefined) localStorage.setItem('classroom-receiver-class', config.classId);
+    return { ok: true };
   },
 };
 

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = 'D:\\HWManagement';
+const CONFIG_FILE = path.join(DATA_DIR, 'receiver-config.json');
 
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
@@ -16,6 +17,27 @@ ensureDir(DATA_DIR);
 
 function getFilePath(classId) {
   return path.join(DATA_DIR, `homework-${classId}.json`);
+}
+
+function loadConfig() {
+  try {
+    if (fs.existsSync(CONFIG_FILE)) {
+      return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    }
+  } catch (e) {
+    console.error('[Config] load error:', e.message);
+  }
+  return {};
+}
+
+function saveConfig(config) {
+  try {
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
+    return { ok: true };
+  } catch (e) {
+    console.error('[Config] save error:', e.message);
+    return { ok: false, error: e.message };
+  }
 }
 
 // ── IPC handlers ──
@@ -63,6 +85,10 @@ ipcMain.handle('set-always-on-top', (_event, on) => {
     else win.setVisibleOnAllWorkspaces(false);
   }
 });
+
+ipcMain.handle('load-receiver-config', () => loadConfig());
+
+ipcMain.handle('save-receiver-config', (_event, config) => saveConfig(config));
 
 function createWindow() {
   const win = new BrowserWindow({

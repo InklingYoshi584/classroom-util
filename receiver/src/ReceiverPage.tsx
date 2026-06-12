@@ -8,12 +8,9 @@ import { HomeworkTracker } from './HomeworkTracker';
 import { electronApi } from './lib/electronApi';
 import './ReceiverPage.css';
 
-const CLASS_KEY = 'classroom-receiver-class';
-const SERVER_HOST_KEY = 'classroom-receiver-server-host';
-
 export function ReceiverPage() {
-  const [serverHost, setServerHost] = useState(() => localStorage.getItem(SERVER_HOST_KEY) || '');
-  const [classId, setClassId] = useState(() => localStorage.getItem(CLASS_KEY) || '');
+  const [serverHost, setServerHost] = useState('');
+  const [classId, setClassId] = useState('');
   const [status, setStatus] = useState<MqttStatus>('disconnected');
   const [currentCall, setCurrentCall] = useState<CallMessage | null>(null);
   const [history, setHistory] = useState<CallMessage[]>([]);
@@ -100,6 +97,19 @@ export function ReceiverPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Load persisted config (D:\HWManagement\receiver-config.json in Electron, localStorage fallback)
+  useEffect(() => {
+    electronApi.loadConfig().then((cfg) => {
+      if (cfg.serverHost) {
+        setServerHost(cfg.serverHost);
+      }
+      if (cfg.classId) {
+        setClassId(cfg.classId);
+        mqttRef.current?.connect(cfg.classId, (cfg.serverHost || undefined));
+      }
+    });
+  }, []);
+
   // Fetch schedule and check status
   useEffect(() => {
     if (!classId.trim()) return;
@@ -158,7 +168,7 @@ export function ReceiverPage() {
   const handleConnect = useCallback(() => {
     const trimmed = classId.trim();
     if (!trimmed) return;
-    localStorage.setItem(CLASS_KEY, trimmed);
+    electronApi.saveConfig({ classId: trimmed, serverHost: serverHost.trim() || undefined });
     mqttRef.current?.connect(trimmed, serverHost.trim() || undefined);
     setConfigLocked(true);
     setShowConfigPanel(false);
@@ -374,7 +384,7 @@ export function ReceiverPage() {
               value={serverHost}
               onChange={(e) => {
                 setServerHost(e.target.value);
-                localStorage.setItem(SERVER_HOST_KEY, e.target.value);
+                electronApi.saveConfig({ serverHost: e.target.value });
               }}
               onKeyDown={handleClassKeyDown}
               disabled={configLocked}
