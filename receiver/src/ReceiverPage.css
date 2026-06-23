@@ -1,5 +1,5 @@
 .receiver-page {
-  max-width: 9600px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 16px;
   height: 100dvh;
@@ -39,8 +39,8 @@
 }
 
 .connection-bar.connected {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--conn-connected-bg);
+  color: var(--conn-connected-text);
 }
 
 .connection-bar.connected .status-dot {
@@ -48,8 +48,8 @@
 }
 
 .connection-bar.disconnected {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--conn-disconnected-bg);
+  color: var(--conn-disconnected-text);
 }
 
 .connection-bar.disconnected .status-dot {
@@ -57,8 +57,8 @@
 }
 
 .connection-bar.connecting {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--conn-connecting-bg);
+  color: var(--conn-connecting-text);
 }
 
 .connection-bar.connecting .status-dot {
@@ -110,7 +110,7 @@
 }
 
 .class-selector button:disabled {
-  background: #9ca3af;
+  background: var(--btn-disabled-bg);
   cursor: not-allowed;
 }
 
@@ -286,7 +286,7 @@
 }
 
 .config-lock-btn:hover {
-  background: #d1d5db;
+  background: var(--muted-hover);
 }
 
 .config-pin-error {
@@ -338,7 +338,7 @@
 }
 
 .config-reconnect-btn:disabled {
-  background: #9ca3af;
+  background: var(--btn-disabled-bg);
   cursor: not-allowed;
 }
 
@@ -350,8 +350,8 @@
 }
 
 .top-actions button {
-  padding: 10px 16px;
-  border-radius: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius);
   font-weight: 600;
   font-size: 0.9rem;
   transition: background 0.15s, transform 0.1s;
@@ -602,14 +602,14 @@
 .clear-btn {
   padding: 4px 12px;
   border-radius: 6px;
-  background: #fee2e2;
+  background: var(--danger-light);
   color: var(--error);
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .clear-btn:hover {
-  background: #fecaca;
+  background: var(--danger-lighter);
 }
 
 .history-item {
@@ -644,13 +644,13 @@
 }
 
 .history-item .replay-sm:hover {
-  background: #dbeafe;
+  background: var(--info-light);
 }
 
 .sender-nick {
   font-size: 0.75rem;
   color: var(--primary);
-  background: #dbeafe;
+  background: var(--info-light);
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 600;
@@ -784,7 +784,7 @@
 }
 
 .pin-gate-buttons .cancel-btn:hover {
-  background: #d1d5db;
+  background: var(--muted-hover);
 }
 
 .pin-gate-buttons .confirm-btn {

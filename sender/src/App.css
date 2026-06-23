@@ -21,6 +21,18 @@
   --radius: 10px;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.1), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --conn-connected-bg: #d1fae5;
+  --conn-connected-text: #065f46;
+  --conn-disconnected-bg: #fee2e2;
+  --conn-disconnected-text: #991b1b;
+  --conn-connecting-bg: #fef3c7;
+  --conn-connecting-text: #92400e;
+  --btn-disabled-bg: #9ca3af;
+  --danger-light: #fee2e2;
+  --danger-lighter: #fecaca;
+  --info-light: #dbeafe;
+  --info-lighter: #bfdbfe;
+  --muted-hover: #d1d5db;
 }
 
 html {

@@ -63,8 +63,8 @@
 }
 
 .connection-bar.connected {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--conn-connected-bg);
+  color: var(--conn-connected-text);
 }
 
 .connection-bar.connected .status-dot {
@@ -72,8 +72,8 @@
 }
 
 .connection-bar.disconnected {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--conn-disconnected-bg);
+  color: var(--conn-disconnected-text);
 }
 
 .connection-bar.disconnected .status-dot {
@@ -81,8 +81,8 @@
 }
 
 .connection-bar.connecting {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--conn-connecting-bg);
+  color: var(--conn-connecting-text);
 }
 
 .connection-bar.connecting .status-dot {
@@ -134,7 +134,7 @@
 }
 
 .class-selector button:disabled {
-  background: #9ca3af;
+  background: var(--btn-disabled-bg);
   cursor: not-allowed;
 }
 
@@ -171,10 +171,10 @@
 }
 
 .csv-import-btn {
-  padding: 10px 16px !important;
+  padding: 10px 20px;
   border-radius: var(--radius);
-  background: #1f2937 !important;
-  color: #fff !important;
+  background: #1f2937;
+  color: #fff;
   font-weight: 600;
   font-size: 0.85rem;
   white-space: nowrap;
@@ -182,7 +182,7 @@
 }
 
 .csv-import-btn:hover {
-  background: #374151 !important;
+  background: #374151;
 }
 
 /* ── Tabs ── */
@@ -256,7 +256,7 @@
 }
 
 .custom-send-btn:disabled {
-  background: #9ca3af;
+  background: var(--btn-disabled-bg);
   cursor: not-allowed;
 }
 
@@ -347,21 +347,21 @@
 }
 
 .student-card .actions .edit-btn {
-  background: #dbeafe;
+  background: var(--info-light);
   color: var(--primary);
 }
 
 .student-card .actions .edit-btn:hover {
-  background: #bfdbfe;
+  background: var(--info-lighter);
 }
 
 .student-card .actions .delete-btn {
-  background: #fee2e2;
+  background: var(--danger-light);
   color: var(--error);
 }
 
 .student-card .actions .delete-btn:hover {
-  background: #fecaca;
+  background: var(--danger-lighter);
 }
 
 .sender-history {
@@ -477,7 +477,7 @@
 }
 
 .confirm-dialog .buttons .cancel-btn:hover {
-  background: #d1d5db;
+  background: var(--muted-hover);
 }
 
 .confirm-dialog .buttons .confirm-btn {
@@ -565,7 +565,7 @@
 }
 
 .close-btn:hover {
-  background: #d1d5db;
+  background: var(--muted-hover);
 }
 
 .pin-status-row {
@@ -688,7 +688,7 @@
 }
 
 .add-pin-row button:disabled {
-  background: #9ca3af;
+  background: var(--btn-disabled-bg);
   cursor: not-allowed;
 }
 
@@ -729,7 +729,7 @@
   width: 26px;
   height: 26px;
   border-radius: 5px;
-  background: #fee2e2;
+  background: var(--danger-light);
   color: var(--error);
   display: flex;
   align-items: center;
@@ -739,7 +739,7 @@
 }
 
 .delete-pin-btn:hover {
-  background: #fecaca;
+  background: var(--danger-lighter);
 }
 
 .msg-template-label {
@@ -900,7 +900,7 @@
   width: 22px;
   height: 22px;
   border-radius: 4px;
-  background: #fee2e2;
+  background: var(--danger-light);
   color: var(--error);
   font-size: 0.7rem;
   display: flex;
