@@ -1,6 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HomeworkTracker } from './HomeworkTracker';
+import './App.css';
+import './HomeworkTracker.css';
 
 function HomeworkPage() {
   const params = new URLSearchParams(window.location.search);
