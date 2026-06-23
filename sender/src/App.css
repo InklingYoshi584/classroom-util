@@ -33,6 +33,9 @@
   --info-light: #dbeafe;
   --info-lighter: #bfdbfe;
   --muted-hover: #d1d5db;
+  --z-overlay: 100;
+  --z-toast: 200;
+  --z-popup: 300;
 }
 
 html {
