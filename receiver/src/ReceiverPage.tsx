@@ -22,9 +22,8 @@ export function ReceiverPage() {
   const [pinVerified, setPinVerified] = useState(false);
   const [gatePinInput, setGatePinInput] = useState('');
   const [gatePinError, setGatePinError] = useState('');
-  const [activeTab, setActiveTab] = useState<'receive' | 'homework'>('receive');
+  const [showHomework, setShowHomework] = useState(false);
   const [configLocked, setConfigLocked] = useState(false);
-  const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [configUnlockPin, setConfigUnlockPin] = useState('');
   const [configPinError, setConfigPinError] = useState('');
   const [hwReloadTrigger, setHwReloadTrigger] = useState(0);
@@ -32,8 +31,9 @@ export function ReceiverPage() {
   const [scheduleActive, setScheduleActive] = useState(false);
   const [receiverNickname, setReceiverNickname] = useState(() => localStorage.getItem('classroom-receiver-nickname') || '');
   const [timerWindowOpen, setTimerWindowOpen] = useState(false);
+  const [showConnectOverlay, setShowConnectOverlay] = useState(true);
 
-  const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const popupTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const scheduleActiveRef = useRef(false);
   scheduleActiveRef.current = scheduleActive;
 
@@ -63,7 +63,7 @@ export function ReceiverPage() {
         if (schedule.length > 0) {
           if (scheduleActiveRef.current) {
             setCurrentCall(msg);
-            if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+            clearTimeout(popupTimerRef.current);
             popupTimerRef.current = setTimeout(() => setCurrentCall(null), 5000);
             return;
           }
@@ -98,7 +98,7 @@ export function ReceiverPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load persisted config (D:\HWManagement\receiver-config.json in Electron, localStorage fallback)
+  // Load persisted config
   useEffect(() => {
     electronApi.loadConfig().then((cfg) => {
       if (cfg.serverHost) {
@@ -110,6 +110,13 @@ export function ReceiverPage() {
       }
     });
   }, []);
+
+  // Dismiss connect overlay once connected
+  useEffect(() => {
+    if (status === 'connected') {
+      setShowConnectOverlay(false);
+    }
+  }, [status]);
 
   // Fetch schedule and check status
   useEffect(() => {
@@ -177,7 +184,6 @@ export function ReceiverPage() {
     electronApi.saveConfig({ classId: trimmed, serverHost: serverHost.trim() || undefined });
     mqttRef.current?.connect(trimmed, serverHost.trim() || undefined);
     setConfigLocked(true);
-    setShowConfigPanel(false);
   }, [classId, serverHost]);
 
   const handleConfigUnlockRequest = async () => {
@@ -211,10 +217,6 @@ export function ReceiverPage() {
     setConfigPinError('');
   };
 
-  const handleClassKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleConnect();
-  };
-
   const handleEnableAudio = async () => {
     setAudioUnlocked(true);
     setTtsSettings((prev) => {
@@ -226,7 +228,7 @@ export function ReceiverPage() {
   };
 
   const handleDismiss = () => {
-    if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+    clearTimeout(popupTimerRef.current);
     ttsEngine.cancel();
     setCurrentCall(null);
   };
@@ -330,333 +332,325 @@ export function ReceiverPage() {
         <span>{statusLabel[status]}</span>
       </div>
 
-      {!classIdTrimmed ? (
-        <div className="class-selector">
-          <input
-            type="text"
-            placeholder="输入班级 ID (如 math-1)"
-            value={classId}
-            onChange={(e) => setClassId(e.target.value)}
-            onKeyDown={handleClassKeyDown}
-          />
-          <button onClick={handleConnect} disabled={status === 'connecting'}>
-            {status === 'connecting' ? '...' : '订阅班级'}
-          </button>
-        </div>
-      ) : (
-        <div className="config-bar">
-          <span className="config-class-label">{classIdTrimmed}</span>
-          <span className="config-status-label">{statusLabel[status]}</span>
-          <button
-            className="config-expand-btn"
-            onClick={() => setShowConfigPanel(!showConfigPanel)}
-            title="连接设置"
-          >
-            {showConfigPanel ? '收起设置' : '连接设置'} {configLocked ? '🔒' : '🔓'}
-          </button>
+      {/* ── Cold start connection overlay ── */}
+      {showConnectOverlay && (
+        <div className="overlay">
+          <div className="connect-dialog">
+            <h3>连接教室</h3>
+            <p>请输入服务器地址和班级 ID 以开始接收呼叫</p>
+            <div className="connect-dialog-fields">
+              <input
+                type="text"
+                className="config-input"
+                placeholder="服务器地址 (留空=本机)"
+                value={serverHost}
+                onChange={(e) => {
+                  setServerHost(e.target.value);
+                  electronApi.saveConfig({ serverHost: e.target.value });
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && classIdTrimmed && handleConnect()}
+              />
+              <input
+                type="text"
+                className="config-input"
+                placeholder="班级 ID (如 math-1)"
+                value={classId}
+                onChange={(e) => setClassId(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
+              />
+            </div>
+            <button
+              className="config-reconnect-btn"
+              onClick={handleConnect}
+              disabled={!classIdTrimmed || status === 'connecting'}
+            >
+              {status === 'connecting' ? '连接中...' : '连接'}
+            </button>
+          </div>
         </div>
       )}
 
-      {classIdTrimmed && showConfigPanel && (
-        <div className="config-panel">
-          <div className="config-panel-header">
-            <h4>连接设置</h4>
-            {configLocked ? (
-              <div className="config-unlock-row">
-                <input
-                  type="password"
-                  className="config-pin-input"
-                  placeholder="输入 PIN 解锁"
-                  value={configUnlockPin}
+      {/* ── Main UI (visible once connected) ── */}
+      {!showConnectOverlay && (
+        <>
+          {!ttsEngine.isAvailable() && (
+            <div className="audio-warning">您的浏览器不支持语音合成，部分功能不可用。</div>
+          )}
+
+          <div className="top-actions">
+            {!audioUnlocked && schedule.length === 0 && (
+              <button className="audio-enable-btn" onClick={handleEnableAudio}>
+                启用语音
+              </button>
+            )}
+            <button className="settings-toggle-btn" onClick={handleToggleSettings}>
+              设置
+            </button>
+            <button className="timer-btn" onClick={handleOpenTimer} title="计时器 / 时钟">
+              ⏱️ 计时器
+            </button>
+            <button className="homework-btn" onClick={() => setShowHomework(true)}>
+              作业
+            </button>
+          </div>
+
+          {schedule.length > 0 && (
+            <div className="schedule-status">
+              <span className={scheduleActive ? 'schedule-active-badge' : 'schedule-idle-badge'}>
+                {scheduleActive ? '课堂中' : '休息中'}
+              </span>
+              <span className="schedule-slots">{schedule.map((s) => `${s.start}-${s.end}`).join(' ')}</span>
+            </div>
+          )}
+
+          {(schedule.length === 0 || !scheduleActive) && (
+            <div className={`call-display ${currentCall ? 'active' : 'idle'}`}>
+              {currentCall ? (
+                <>
+                  <div className="call-text">{currentCall.message}</div>
+                  <div className="call-time">{currentCall.time}</div>
+                  <div className="call-actions">
+                    <button className="replay-btn" onClick={handleReplay}>重播</button>
+                    <button className="dismiss-btn" onClick={handleDismiss}>关闭</button>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <span className="idle-icon">📢</span>
+                  {isConnected ? '等待呼叫...' : '连接中...'}
+                </div>
+              )}
+            </div>
+          )}
+
+          {schedule.length > 0 && scheduleActive && currentCall && (
+            <div className="call-popup">
+              <div className="call-popup-name">{currentCall.name}</div>
+              <div className="call-popup-msg">{currentCall.message}</div>
+              <button className="call-popup-close" onClick={handleDismiss}>&#10005;</button>
+            </div>
+          )}
+
+          {history.length > 0 && (
+            <div className="receiver-history">
+              <div className="receiver-history-header">
+                <h3>呼叫记录</h3>
+                <button className="clear-btn" onClick={handleClearHistory}>清空</button>
+              </div>
+              <div className="callback-row">
+                <select
+                  className="callback-select"
+                  value=""
                   onChange={(e) => {
-                    setConfigUnlockPin(e.target.value);
-                    setConfigPinError('');
+                    const val = e.target.value;
+                    if (!val) return;
+                    mqttRef.current?.publish({
+                      type: 'call-sender',
+                      id: crypto.randomUUID?.() ?? `${Date.now()}`,
+                      targetClientId: val,
+                      message: '接收端呼叫',
+                      time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                      timestamp: Date.now(),
+                      nickname: receiverNickname || undefined,
+                      classId: classIdTrimmed,
+                    });
+                    e.target.value = '';
                   }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleConfigPinSubmit()}
-                />
-                <button className="config-unlock-btn" onClick={handleConfigPinSubmit}>
-                  解锁
-                </button>
-                {configPinError && <div className="config-pin-error">{configPinError}</div>}
+                >
+                  <option value="">呼叫老师...</option>
+                  {(() => {
+                    const seen = new Map<string, string>();
+                    history.forEach((h) => {
+                      if (h.senderId && h.nickname && !seen.has(h.senderId)) {
+                        seen.set(h.senderId, h.nickname);
+                      }
+                    });
+                    return [...seen].map(([id, nick]) => (
+                      <option key={id} value={id}>{nick}</option>
+                    ));
+                  })()}
+                </select>
               </div>
-            ) : (
-              <button className="config-lock-btn" onClick={handleConfigLock}>
-                锁定
-              </button>
-            )}
-          </div>
-
-          <label className="config-label">
-            服务器地址
-            <input
-              type="text"
-              className={`config-input ${configLocked ? 'locked' : ''}`}
-              placeholder="留空=本机"
-              value={serverHost}
-              onChange={(e) => {
-                setServerHost(e.target.value);
-                electronApi.saveConfig({ serverHost: e.target.value });
-              }}
-              onKeyDown={handleClassKeyDown}
-              disabled={configLocked}
-            />
-          </label>
-
-          <label className="config-label">
-            频道 (班级 ID)
-            <input
-              type="text"
-              className={`config-input ${configLocked ? 'locked' : ''}`}
-              placeholder="输入班级 ID"
-              value={classId}
-              onChange={(e) => setClassId(e.target.value)}
-              onKeyDown={handleClassKeyDown}
-              disabled={configLocked}
-            />
-          </label>
-
-          {!configLocked && (
-            <button className="config-reconnect-btn" onClick={handleConnect} disabled={status === 'connecting'}>
-              {status === 'connecting' ? '...' : '重新连接'}
-            </button>
+              {history.map((h) => (
+                <div key={h.id} className="history-item">
+                  <span className="dot" />
+                  <span>{h.name}</span>
+                  {h.nickname && <span className="sender-nick">{h.nickname}</span>}
+                  <span className="time">{h.time}</span>
+                  <button className="replay-sm" onClick={() => handleReplayHistory(h)}>重播</button>
+                </div>
+              ))}
+            </div>
           )}
-        </div>
+        </>
       )}
 
-      {classIdTrimmed && (
-        <div className="tab-bar">
-          <button className={`tab-btn ${activeTab === 'receive' ? 'active' : ''}`} onClick={() => setActiveTab('receive')}>
-            接收
-          </button>
-          <button className={`tab-btn ${activeTab === 'homework' ? 'active' : ''}`} onClick={() => setActiveTab('homework')}>
-            作业
-          </button>
-        </div>
-      )}
-
-      <div className="tab-content">
-        {activeTab === 'receive' ? (
-          <>
-            {!ttsEngine.isAvailable() && (
-              <div className="audio-warning">您的浏览器不支持语音合成，部分功能不可用。</div>
-            )}
-
-      <div className="top-actions">
-        {!audioUnlocked && schedule.length === 0 && (
-          <button className="audio-enable-btn" onClick={handleEnableAudio}>
-            启用语音
-          </button>
-        )}
-        <button className="settings-toggle-btn" onClick={handleToggleSettings}>
-          {showSettings ? '收起设置' : 'TTS 设置'}
-        </button>
-        <button className="timer-btn" onClick={handleOpenTimer} title="计时器 / 时钟">
-          ⏱️ 计时器
-        </button>
-      </div>
-
-      {schedule.length > 0 && (
-        <div className="schedule-status">
-          <span className={scheduleActive ? 'schedule-active-badge' : 'schedule-idle-badge'}>
-            {scheduleActive ? '课堂中' : '休息中'}
-          </span>
-          <span className="schedule-slots">{schedule.map((s) => `${s.start}-${s.end}`).join(' ')}</span>
-        </div>
-      )}
-
+      {/* ── Settings overlay ── */}
       {showSettings && (
-        <div className="settings-panel">
-          <label>
-            朗读模板
-            <span className="vars">变量: {'{name}'} {'{message}'} {'{time}'}</span>
-            <input
-              type="text"
-              value={ttsSettings.template}
-              onChange={(e) => setTtsSettings((p) => ({ ...p, template: e.target.value }))}
-            />
-          </label>
-
-          <label>
-            语音
-            <select
-              value={ttsSettings.voiceName || ''}
-              onChange={(e) => setTtsSettings((p) => ({ ...p, voiceName: e.target.value || null }))}
-            >
-              <option value="">默认</option>
-              {voices
-                .filter((v) => v.lang.includes('zh'))
-                .map((v) => (
-                  <option key={v.name} value={v.name}>
-                    {v.name} ({v.lang})
-                  </option>
-                ))}
-            </select>
-          </label>
-
-          <label>
-            语速: {ttsSettings.rate.toFixed(1)}
-            <div className="range-row">
-              <span>0.5</span>
-              <input
-                type="range"
-                min="0.5"
-                max="2"
-                step="0.1"
-                value={ttsSettings.rate}
-                onChange={(e) => setTtsSettings((p) => ({ ...p, rate: parseFloat(e.target.value) }))}
-              />
-              <span>2.0</span>
+        <div className="overlay" onClick={() => setShowSettings(false)}>
+          <div className="settings-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="settings-dialog-header">
+              <h3>设置</h3>
+              <button className="close-btn" onClick={() => setShowSettings(false)}>&#10005;</button>
             </div>
-          </label>
 
-          <label>
-            音量: {ttsSettings.volume.toFixed(1)}
-            <div className="range-row">
-              <span>0</span>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={ttsSettings.volume}
-                onChange={(e) => setTtsSettings((p) => ({ ...p, volume: parseFloat(e.target.value) }))}
-              />
-              <span>1</span>
-            </div>
-          </label>
+            <div className="settings-section">
+              <h4>连接设置</h4>
+              {configLocked ? (
+                <div className="config-unlock-row">
+                  <input
+                    type="password"
+                    className="config-pin-input"
+                    placeholder="输入 PIN 解锁"
+                    value={configUnlockPin}
+                    onChange={(e) => {
+                      setConfigUnlockPin(e.target.value);
+                      setConfigPinError('');
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleConfigPinSubmit()}
+                  />
+                  <button className="config-unlock-btn" onClick={handleConfigPinSubmit}>解锁</button>
+                  {configPinError && <div className="config-pin-error">{configPinError}</div>}
+                </div>
+              ) : (
+                <button className="config-lock-btn" onClick={handleConfigLock}>锁定</button>
+              )}
 
-          <label>
-            重复次数: {ttsSettings.repeat}
-            <div className="range-row">
-              <span>1</span>
-              <input
-                type="range"
-                min="1"
-                max="5"
-                step="1"
-                value={ttsSettings.repeat}
-                onChange={(e) => setTtsSettings((p) => ({ ...p, repeat: parseInt(e.target.value) }))}
-              />
-              <span>5</span>
-            </div>
-          </label>
+              <label className="config-label">
+                服务器地址
+                <input
+                  type="text"
+                  className={`config-input ${configLocked ? 'locked' : ''}`}
+                  placeholder="留空=本机"
+                  value={serverHost}
+                  onChange={(e) => {
+                    setServerHost(e.target.value);
+                    electronApi.saveConfig({ serverHost: e.target.value });
+                  }}
+                  disabled={configLocked}
+                />
+              </label>
 
-          <div className="preview-text">
-            预览: {previewTemplate(ttsSettings.template || DEFAULT_TTS.template)}
-          </div>
+              <label className="config-label">
+                频道 (班级 ID)
+                <input
+                  type="text"
+                  className={`config-input ${configLocked ? 'locked' : ''}`}
+                  placeholder="输入班级 ID"
+                  value={classId}
+                  onChange={(e) => setClassId(e.target.value)}
+                  disabled={configLocked}
+                />
+              </label>
 
-          <label>
-            接收端昵称
-            <input
-              type="text"
-              placeholder="如: 教室前端"
-              value={receiverNickname}
-              onChange={(e) => {
-                setReceiverNickname(e.target.value);
-                localStorage.setItem('classroom-receiver-nickname', e.target.value);
-              }}
-            />
-          </label>
-
-          <div className="settings-actions">
-            <button className="test-btn" onClick={handleTestSpeak}>
-              测试朗读
-            </button>
-            <button className="save-btn" onClick={handleSaveSettings}>
-              保存设置
-            </button>
-          </div>
-        </div>
-      )}
-
-      {(schedule.length === 0 || !scheduleActive) && (
-        <div className={`call-display ${currentCall ? 'active' : 'idle'}`}>
-          {currentCall ? (
-            <>
-              <div className="call-text">{currentCall.message}</div>
-              <div className="call-time">{currentCall.time}</div>
-              <div className="call-actions">
-                <button className="replay-btn" onClick={handleReplay}>
-                  重播
+              {!configLocked && (
+                <button className="config-reconnect-btn" onClick={handleConnect} disabled={status === 'connecting'}>
+                  {status === 'connecting' ? '...' : '重新连接'}
                 </button>
-                <button className="dismiss-btn" onClick={handleDismiss}>
-                  关闭
-                </button>
+              )}
+            </div>
+
+            <div className="settings-section">
+              <h4>TTS 设置</h4>
+              <label>
+                朗读模板
+                <span className="vars">变量: {'{name}'} {'{message}'} {'{time}'}</span>
+                <input
+                  type="text"
+                  value={ttsSettings.template}
+                  onChange={(e) => setTtsSettings((p) => ({ ...p, template: e.target.value }))}
+                />
+              </label>
+
+              <label>
+                语音
+                <select
+                  value={ttsSettings.voiceName || ''}
+                  onChange={(e) => setTtsSettings((p) => ({ ...p, voiceName: e.target.value || null }))}
+                >
+                  <option value="">默认</option>
+                  {voices
+                    .filter((v) => v.lang.includes('zh'))
+                    .map((v) => (
+                      <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
+                    ))}
+                </select>
+              </label>
+
+              <label>
+                语速: {ttsSettings.rate.toFixed(1)}
+                <div className="range-row">
+                  <span>0.5</span>
+                  <input type="range" min="0.5" max="2" step="0.1" value={ttsSettings.rate} onChange={(e) => setTtsSettings((p) => ({ ...p, rate: parseFloat(e.target.value) }))} />
+                  <span>2.0</span>
+                </div>
+              </label>
+
+              <label>
+                音量: {ttsSettings.volume.toFixed(1)}
+                <div className="range-row">
+                  <span>0</span>
+                  <input type="range" min="0" max="1" step="0.1" value={ttsSettings.volume} onChange={(e) => setTtsSettings((p) => ({ ...p, volume: parseFloat(e.target.value) }))} />
+                  <span>1</span>
+                </div>
+              </label>
+
+              <label>
+                重复次数: {ttsSettings.repeat}
+                <div className="range-row">
+                  <span>1</span>
+                  <input type="range" min="1" max="5" step="1" value={ttsSettings.repeat} onChange={(e) => setTtsSettings((p) => ({ ...p, repeat: parseInt(e.target.value) }))} />
+                  <span>5</span>
+                </div>
+              </label>
+
+              <div className="preview-text">
+                预览: {previewTemplate(ttsSettings.template || DEFAULT_TTS.template)}
               </div>
-            </>
-          ) : (
-            <div>
-              <span className="idle-icon">📢</span>
-              {classIdTrimmed && isConnected ? '等待呼叫...' : '请先订阅班级'}
+
+              <label>
+                接收端昵称
+                <input
+                  type="text"
+                  placeholder="如: 教室前端"
+                  value={receiverNickname}
+                  onChange={(e) => {
+                    setReceiverNickname(e.target.value);
+                    localStorage.setItem('classroom-receiver-nickname', e.target.value);
+                  }}
+                />
+              </label>
+
+              <div className="settings-actions">
+                <button className="test-btn" onClick={handleTestSpeak}>测试朗读</button>
+                <button className="save-btn" onClick={handleSaveSettings}>保存设置</button>
+              </div>
             </div>
-          )}
-        </div>
-      )}
-
-      {schedule.length > 0 && scheduleActive && currentCall && (
-        <div className="call-popup">
-          <div className="call-popup-name">{currentCall.name}</div>
-          <div className="call-popup-msg">{currentCall.message}</div>
-          <button className="call-popup-close" onClick={handleDismiss}>&#10005;</button>
-        </div>
-      )}
-
-      {history.length > 0 && (
-        <div className="receiver-history">
-          <div className="receiver-history-header">
-            <h3>呼叫记录</h3>
-            <button className="clear-btn" onClick={handleClearHistory}>
-              清空
-            </button>
           </div>
-          <div className="callback-row">
-            <select
-              className="callback-select"
-              value=""
-              onChange={(e) => {
-                const val = e.target.value;
-                if (!val) return;
-                mqttRef.current?.publish({
-                  type: 'call-sender',
-                  id: crypto.randomUUID?.() ?? `${Date.now()}`,
-                  targetClientId: val,
-                  message: '接收端呼叫',
-                  time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-                  timestamp: Date.now(),
-                  nickname: receiverNickname || undefined,
-                  classId: classIdTrimmed,
-                });
-                e.target.value = '';
+        </div>
+      )}
+
+      {/* ── Homework overlay ── */}
+      {showHomework && (
+        <div className="overlay" onClick={() => setShowHomework(false)}>
+          <div className="homework-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="homework-dialog-header">
+              <h3>作业追踪</h3>
+              <button className="close-btn" onClick={() => setShowHomework(false)}>&#10005;</button>
+            </div>
+            <HomeworkTracker
+              classId={classIdTrimmed}
+              serverHost={serverHost.trim()}
+              reloadTrigger={hwReloadTrigger}
+              onDataSaved={() => {
+                mqttRef.current?.publish({ type: 'hw-sync', classId: classIdTrimmed, timestamp: Date.now() });
               }}
-            >
-              <option value="">呼叫老师...</option>
-              {(() => {
-                const seen = new Map<string, string>();
-                history.forEach((h) => {
-                  if (h.senderId && h.nickname && !seen.has(h.senderId)) {
-                    seen.set(h.senderId, h.nickname);
-                  }
-                });
-                return [...seen].map(([id, nick]) => (
-                  <option key={id} value={id}>{nick}</option>
-                ));
-              })()}
-            </select>
+            />
           </div>
-          {history.map((h) => (
-            <div key={h.id} className="history-item">
-              <span className="dot" />
-              <span>{h.name}</span>
-              {h.nickname && <span className="sender-nick">{h.nickname}</span>}
-              <span className="time">{h.time}</span>
-              <button className="replay-sm" onClick={() => handleReplayHistory(h)}>
-                重播
-              </button>
-            </div>
-          ))}
         </div>
       )}
 
+      {/* ── PIN gate dialog ── */}
       {pinRequired && (
         <div className="overlay" onClick={handleGatePinCancel}>
           <div className="pin-gate-dialog" onClick={(e) => e.stopPropagation()}>
@@ -682,18 +676,6 @@ export function ReceiverPage() {
           </div>
         </div>
       )}
-        </>
-      ) : (
-        <HomeworkTracker
-          classId={classIdTrimmed}
-          serverHost={serverHost.trim()}
-          reloadTrigger={hwReloadTrigger}
-          onDataSaved={() => {
-            mqttRef.current?.publish({ type: 'hw-sync', classId: classIdTrimmed, timestamp: Date.now() });
-          }}
-        />
-      )}
-      </div>
     </div>
   );
 }

@@ -891,3 +891,215 @@
     opacity: 1;
   }
 }
+
+/* ── Homework button ── */
+.homework-btn {
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.homework-btn:hover {
+  background: var(--border);
+}
+
+.homework-btn:active {
+  transform: scale(0.96);
+}
+
+/* ── Connect dialog (cold start) ── */
+.connect-dialog {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  width: 90%;
+  max-width: 380px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  animation: scaleIn 0.2s;
+}
+
+.connect-dialog h3 {
+  font-size: 1.15rem;
+  margin-bottom: 6px;
+}
+
+.connect-dialog p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.connect-dialog-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.connect-dialog-fields input {
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  background: var(--bg);
+  transition: border-color 0.15s;
+}
+
+.connect-dialog-fields input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.connect-dialog .config-reconnect-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.15s;
+}
+
+.connect-dialog .config-reconnect-btn:hover {
+  background: var(--primary-dark);
+}
+
+.connect-dialog .config-reconnect-btn:disabled {
+  background: var(--btn-disabled-bg);
+  cursor: not-allowed;
+}
+
+/* ── Settings dialog (combined) ── */
+.settings-dialog {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  width: 90%;
+  max-width: 440px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn 0.2s;
+}
+
+.settings-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.settings-dialog-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.settings-section {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.settings-section h4 {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.settings-section label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.settings-section label .vars {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+.settings-section input[type='text'],
+.settings-section select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: var(--bg);
+  transition: border-color 0.15s;
+}
+
+.settings-section input[type='text']:focus,
+.settings-section select:focus {
+  border-color: var(--primary);
+}
+
+.settings-section input[type='range'] {
+  width: 100%;
+}
+
+.settings-section .range-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.settings-section .range-row span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  min-width: 24px;
+  text-align: center;
+}
+
+.settings-section .preview-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+/* ── Homework dialog ── */
+.homework-dialog {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px;
+  width: 95%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn 0.2s;
+}
+
+.homework-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.homework-dialog-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
