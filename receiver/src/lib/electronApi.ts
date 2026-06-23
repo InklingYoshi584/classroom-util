@@ -10,6 +10,9 @@ interface ElectronHomeworkAPI {
   setAlwaysOnTop: (on: boolean) => Promise<void>;
   loadConfig: () => Promise<ReceiverConfig>;
   saveConfig: (config: ReceiverConfig) => Promise<{ ok: boolean; error?: string }>;
+  openTimerWindow: () => Promise<{ ok: boolean }>;
+  closeTimerWindow: () => Promise<{ ok: boolean }>;
+  onTimerWindowClosed: (callback: () => void) => void;
 }
 
 declare global {
@@ -60,6 +63,21 @@ export const electronApi: ElectronHomeworkAPI = {
     if (config.serverHost !== undefined) localStorage.setItem('classroom-receiver-server-host', config.serverHost);
     if (config.classId !== undefined) localStorage.setItem('classroom-receiver-class', config.classId);
     return { ok: true };
+  },
+  async openTimerWindow() {
+    if (window.electronAPI) return window.electronAPI.openTimerWindow();
+    // Browser fallback: open as popup window
+    window.open('/timer.html', 'classroom-timer', 'width=420,height=520');
+    return { ok: true };
+  },
+  async closeTimerWindow() {
+    if (window.electronAPI) return window.electronAPI.closeTimerWindow();
+    return { ok: true };
+  },
+  onTimerWindowClosed(callback: () => void) {
+    if (window.electronAPI) {
+      window.electronAPI.onTimerWindowClosed(callback);
+    }
   },
 };
 

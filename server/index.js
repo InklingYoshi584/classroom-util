@@ -40,9 +40,8 @@ function saveData(data) {
     console.error('[DATA] Failed to save:', e.message);
   }
 }
-
 function persist() {
-  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule });
+  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule, messageCache });
 }
 
 // ── Daily homework file helpers ──
@@ -84,7 +83,7 @@ const persisted = loadData();
 const pinSet = new Set(persisted.pins || []);
 const studentsMap = persisted.students || {};
 let globalSchedule = persisted.schedules || [];
-const messageCache = {}; // classId -> messages[]
+const messageCache = persisted.messageCache || {}; // classId -> messages[]
 
 // ── Auto-migrate legacy hwData from data.json to daily files ──
 if (persisted.hwData && Object.keys(persisted.hwData).length > 0) {
@@ -97,10 +96,12 @@ if (persisted.hwData && Object.keys(persisted.hwData).length > 0) {
     }
   }
   delete persisted.hwData;
-  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule });
-  console.log(`[DATA] auto-migrated ${count} hw entries to daily files`);
+  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule, messageCache });
 }
 
+
+// Ensure data.json includes all current fields (e.g. messageCache after upgrade)
+if (!persisted.messageCache) persist();
 // ── JSON body parser (must come before routes) ──
 app.use(express.json());
 
@@ -311,6 +312,7 @@ broker.on('publish', (packet, client) => {
           if (!messageCache[classId]) messageCache[classId] = [];
           messageCache[classId].push(msg);
           if (messageCache[classId].length > 5) messageCache[classId].shift();
+          persist();
         }
       } catch {}
     }

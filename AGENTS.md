@@ -66,3 +66,13 @@ Both `sender/vite.config.ts` and `receiver/vite.config.ts` proxy `/api` → `htt
 - **CORS** — server has wildcard `Access-Control-Allow-Origin: *`. Needed because receiver dev on port 5174 calls server on 8787.
 - **TTS** — browser `SpeechSynthesis` requires user click to unlock on first use ("启用语音" button). Some browsers block auto-speak entirely.
 - **Receiver server-host input** — leave blank for same-machine (Vite proxy handles it). Fill in LAN IP when receiver is on a different device.
+
+- **Missing `</style>` → blank page.** When editing inline `<style>` blocks in self-contained HTML files (e.g. `timer.html`), the closing `</style>` tag can be silently dropped. The browser treats everything from `<style>` to EOF as CSS, so the body is empty and nothing renders. Always verify `</style>` is present after CSS edits.
+- **Double-interval from unguarded `startCountdown()`.** If `setInterval` is called while already running, a second interval is created overwriting the first ID — `clearInterval` only kills one, leaving an orphan that keeps counting. Always guard with `if (running) return;` at the top.
+- **CSS Grid `height: 100%` unreliable in popup/Electron frameless windows.** Use flexbox instead: `body { display: flex; flex-direction: column; }` + `.main-content { flex: 1; }` for vertical centering. Grid with `1fr` can collapse to 0 when the viewport height isn't resolved.
+- **Stale Vite dev processes.** Cancelling `npm run dev` (via concurrently) often leaves orphaned node processes holding ports. Run `dev.cmd` (project root) to kill all dev ports first, then start. Or manually:
+  ```cmd
+  netstat -ano | findstr "LISTENING" | findstr ":517[3-8] \|:8787 "
+  taskkill /pid <PID> /f
+  ```
+- **`flex-shrink: 0` not enough to prevent text overflow in flex children.** When a flex container is too narrow, children with only `flex-shrink: 0` can still be squeezed below their text content width. Use `flex: none` + `min-width: max-content` on each child to force full text-based sizing.

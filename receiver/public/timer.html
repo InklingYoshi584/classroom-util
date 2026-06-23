@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>计时器</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --primary: #4f46e5;
+  --primary-light: #818cf8;
+  --primary-dark: #3730a3;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --border: #e2e8f0;
+  --radius: 8px;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+body.flash { animation: flashBg 0.3s ease-in-out 3; }
+
+@keyframes flashBg {
+  0%, 100% { background: var(--bg); }
+  50% { background: #fef2f2; }
+}
+
+/* ── Title bar ── */
+.title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 12px;
+  background: #f1f5f9;
+  -webkit-app-region: drag;
+  border-bottom: 1px solid var(--border);
+}
+.title-bar span { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
+.title-bar button {
+  -webkit-app-region: no-drag;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  width: 28px; height: 28px;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.title-bar button:hover { background: rgba(0,0,0,0.06); color: var(--text); }
+
+/* ── Main content — vertically centered ── */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  overflow: hidden;
+}
+
+/* ── Mode selector (inside title bar) ── */
+.mode-selector {
+  display: flex;
+  flex-shrink: 0;
+  gap: 1px;
+  background: rgba(0,0,0,0.04);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.mode-selector button {
+  width: auto;
+  height: auto;
+  flex: none;
+  min-width: max-content;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-weight: 500;
+  border-radius: 0;
+}
+.mode-selector button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+.mode-selector button:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+.mode-selector button.active { background: var(--primary); color: #fff; }
+.mode-selector button:not(.active):hover { background: var(--border); color: var(--text); }
+
+/* ── Clock ── */
+.clock-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+}
+.clock-display {
+  font-family: 'Courier New', 'Source Code Pro', 'Consolas', monospace;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--text);
+}
+.clock-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  letter-spacing: 2px;
+}
+
+/* ── Countdown ── */
+.countdown-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 0;
+}
+.countdown-ring-container {
+  position: relative;
+  width: 180px; height: 180px;
+  margin: 4px 0 8px;
+}
+.countdown-ring-container svg {
+  transform: rotate(-90deg);
+  width: 180px; height: 180px;
+}
+.ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+.ring-progress { fill: none; stroke: var(--primary); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.3s linear; }
+.ring-progress.warning { stroke: var(--danger); }
+.countdown-display {
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Courier New', 'Source Code Pro', 'Consolas', monospace;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.countdown-display.warning { color: var(--danger); }
+
+/* ── Presets ── */
+.presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.presets button {
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.presets button:hover { border-color: var(--primary); color: var(--primary); }
+.presets button.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* ── Custom input ── */
+.custom-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.custom-input input {
+  width: 48px;
+  padding: 4px 6px;
+  font-size: 0.9rem;
+  text-align: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  font-family: 'Courier New', monospace;
+}
+.custom-input input:focus { border-color: var(--primary); outline: none; }
+.custom-input span { color: var(--text-secondary); font-size: 0.85rem; }
+
+/* ── Controls ── */
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.controls button {
+  padding: 8px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.controls button:active { transform: scale(0.95); }
+.controls .start-btn { background: var(--primary); color: #fff; }
+.controls .start-btn:hover { background: var(--primary-dark); }
+.controls .pause-btn { background: var(--warning); color: #fff; }
+.controls .pause-btn:hover { background: #d97706; }
+.controls .reset-btn { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
+.controls .reset-btn:hover { background: var(--border); }
+
+/* ── Footer ── */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: #f1f5f9;
+  border-top: 1px solid var(--border);
+}
+.footer .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.footer .dot.active { background: #10b981; }
+.footer .dot.inactive { background: #cbd5e1; }
+
+/* ── Divider ── */
+.divider {
+  width: 80%;
+  height: 1px;
+  background: var(--border);
+  margin: 4px auto;
+}
+
+/* ── Running state: hide distractions ── */
+body.running .mode-selector,
+body.running .clock-section,
+body.running .divider,
+body.running .presets,
+body.running .custom-input,
+body.running .start-btn { display: none; }
+
+/* ── Running state: expand countdown when focused ── */
+body.running .main-content { justify-content: center; }
+body.running .countdown-ring-container { width: 220px; height: 220px; }
+body.running .countdown-ring-container svg { width: 220px; height: 220px; }
+body.running .countdown-display { font-size: 3rem; }
+</style>
+<body>
+
+<div class="title-bar">
+  <span>计时器</span>
+  <div class="mode-selector" id="modeSelector">
+    <button data-mode="clock">时钟</button>
+    <button data-mode="countdown" class="active">倒计时</button>
+    <button data-mode="both">两者</button>
+  </div>
+  <button id="closeBtn" title="关闭">&times;</button>
+</div>
+
+<div class="main-content">
+<div class="clock-section" id="clockSection">
+  <div class="clock-display" id="clockDisplay">00:00:00</div>
+  <div class="clock-label">当前时间</div>
+</div>
+
+<div class="divider" id="divider"></div>
+
+<div class="countdown-section" id="countdownSection">
+  <div class="countdown-ring-container">
+    <svg viewBox="0 0 200 200">
+      <circle class="ring-bg" cx="100" cy="100" r="92"/>
+      <circle class="ring-progress" id="ringProgress" cx="100" cy="100" r="92"
+              stroke-dasharray="578" stroke-dashoffset="0"/>
+    </svg>
+    <div class="countdown-display" id="countdownDisplay">05:00</div>
+  </div>
+
+  <div class="presets" id="presets">
+    <button data-minutes="1">1分</button>
+    <button data-minutes="3">3分</button>
+    <button data-minutes="5" class="selected">5分</button>
+    <button data-minutes="10">10分</button>
+    <button data-minutes="15">15分</button>
+    <button data-minutes="30">30分</button>
+  </div>
+
+  <div class="custom-input">
+    <input type="number" id="customMin" min="0" max="99" placeholder="00" value="">
+    <span>分</span>
+    <input type="number" id="customSec" min="0" max="59" placeholder="00" value="">
+    <span>秒</span>
+  </div>
+
+  <div class="controls">
+    <button class="start-btn" id="startBtn">▶ 开始</button>
+    <button class="pause-btn" id="pauseBtn">⏸ 暂停</button>
+    <button class="reset-btn" id="resetBtn">↺ 重置</button>
+  </div>
+</div>
+</div>
+
+<div class="footer">
+  <span class="dot active" id="wakeDot"></span>
+  <span>防休眠</span>
+</div>
+
+<script>
+// ── DOM refs ──
+const clockSection = document.getElementById('clockSection');
+const clockDisplay = document.getElementById('clockDisplay');
+const countdownSection = document.getElementById('countdownSection');
+const countdownDisplay = document.getElementById('countdownDisplay');
+const ringProgress = document.getElementById('ringProgress');
+const divider = document.getElementById('divider');
+const startBtn = document.getElementById('startBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const resetBtn = document.getElementById('resetBtn');
+const customMin = document.getElementById('customMin');
+const customSec = document.getElementById('customSec');
+const wakeDot = document.getElementById('wakeDot');
+const modeButtons = document.querySelectorAll('#modeSelector button');
+const presetButtons = document.querySelectorAll('#presets button');
+
+// ── State ──
+const CIRCUMFERENCE = 2 * Math.PI * 92; // ~578.05
+let mode = 'countdown'; // clock | countdown | both
+let targetSeconds = 300; // 5 min default
+let remainingSeconds = 300;
+let running = false;
+let timerInterval = null;
+
+// ── Render helpers ──
+function updateModeUI() {
+  clockSection.style.display = (mode === 'clock' || mode === 'both') ? '' : 'none';
+  countdownSection.style.display = (mode === 'countdown' || mode === 'both') ? '' : 'none';
+  divider.style.display = (mode === 'both') ? '' : 'none';
+  modeButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+}
+
+function formatClock(date) {
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  const s = String(date.getSeconds()).padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+function formatCountdown(secs) {
+  const m = String(Math.floor(secs / 60)).padStart(2, '0');
+  const s = String(secs % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function updateRing(secs) {
+  const fraction = secs / targetSeconds;
+  const offset = CIRCUMFERENCE * (1 - fraction);
+  ringProgress.setAttribute('stroke-dashoffset', offset);
+  ringProgress.classList.toggle('warning', secs <= 30 && secs > 0);
+}
+
+function updateCountdownDisplay() {
+  countdownDisplay.textContent = formatCountdown(remainingSeconds);
+  countdownDisplay.classList.toggle('warning', remainingSeconds <= 30 && remainingSeconds > 0);
+  updateRing(remainingSeconds);
+}
+
+// ── Clock ──
+function tickClock() {
+  clockDisplay.textContent = formatClock(new Date());
+}
+
+// ── Countdown logic ──
+function startCountdown() {
+  if (running) return;
+  if (remainingSeconds <= 0) return;
+  running = true;
+  document.body.classList.add('running');
+  timerInterval = setInterval(() => {
+    remainingSeconds--;
+    updateCountdownDisplay();
+    if (remainingSeconds <= 0) {
+      stopCountdown();
+      onComplete();
+    }
+  }, 1000);
+}
+
+function pauseCountdown() {
+  if (!running) return;
+  running = false;
+  document.body.classList.remove('running');
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function stopCountdown() {
+  running = false;
+  document.body.classList.remove('running');
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function resetCountdown() {
+  stopCountdown();
+  remainingSeconds = targetSeconds;
+  updateCountdownDisplay();
+}
+
+function setTarget(secs, presetEl) {
+  targetSeconds = secs;
+  remainingSeconds = secs;
+  updateCountdownDisplay();
+  // Update preset selection
+  presetButtons.forEach(b => b.classList.remove('selected'));
+  if (presetEl) presetEl.classList.add('selected');
+  // Clear custom inputs if a preset was clicked
+  if (presetEl) { customMin.value = ''; customSec.value = ''; }
+}
+
+// ── Completion effects ──
+function onComplete() {
+  // Flash background
+  document.body.classList.add('flash');
+  setTimeout(() => document.body.classList.remove('flash'), 900);
+
+  // Web Audio beep
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    for (let i = 0; i < 3; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 440;
+      gain.gain.value = 0.3;
+      const startTime = ctx.currentTime + i * 0.3;
+      osc.start(startTime);
+      osc.stop(startTime + 0.2);
+    }
+  } catch (_) {}
+
+  // TTS "时间到"
+  try {
+    if ('speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance('时间到');
+      u.lang = 'zh-CN';
+      u.rate = 0.9;
+      speechSynthesis.speak(u);
+    }
+  } catch (_) {}
+}
+
+// ── Wake Lock ──
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeDot.classList.add('active');
+    wakeDot.classList.remove('inactive');
+    wakeLock.addEventListener('release', () => {
+      wakeDot.classList.remove('active');
+      wakeDot.classList.add('inactive');
+    });
+  } catch (_) {
+    wakeDot.classList.remove('active');
+    wakeDot.classList.add('inactive');
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !wakeLock) {
+    requestWakeLock();
+  }
+});
+
+// ── Event bindings ──
+modeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    mode = btn.dataset.mode;
+    updateModeUI();
+  });
+});
+
+presetButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const mins = parseInt(btn.dataset.minutes, 10);
+    if (running) { stopCountdown(); }
+    setTarget(mins * 60, btn);
+  });
+});
+
+customMin.addEventListener('input', () => {
+  const m = parseInt(customMin.value, 10) || 0;
+  const s = parseInt(customSec.value, 10) || 0;
+  presetButtons.forEach(b => b.classList.remove('selected'));
+  if (m > 0 || s > 0) {
+    if (running) { stopCountdown(); }
+    setTarget(m * 60 + s, null);
+  }
+});
+customSec.addEventListener('input', () => {
+  const m = parseInt(customMin.value, 10) || 0;
+  const s = parseInt(customSec.value, 10) || 0;
+  presetButtons.forEach(b => b.classList.remove('selected'));
+  if (m > 0 || s > 0) {
+    if (running) { stopCountdown(); }
+    setTarget(m * 60 + s, null);
+  }
+});
+
+startBtn.addEventListener('click', startCountdown);
+pauseBtn.addEventListener('click', pauseCountdown);
+resetBtn.addEventListener('click', resetCountdown);
+
+document.getElementById('closeBtn').addEventListener('click', () => window.close());
+
+// ── Init ──
+updateModeUI();
+updateCountdownDisplay();
+tickClock();
+setInterval(tickClock, 1000);
+requestWakeLock();
+</script>
+</body>
+</html>

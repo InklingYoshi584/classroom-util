@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, powerSaveBlocker } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -40,6 +40,10 @@ function saveConfig(config) {
   }
 }
 
+// ── Timer window state ──
+let timerWindow = null;
+let powerSaveBlockerId = null;
+
 // ── IPC handlers ──
 ipcMain.handle('load-homework-data', (_event, classId) => {
   try {
@@ -80,10 +84,62 @@ ipcMain.handle('export-homework-backup', (_event, classId, data) => {
 ipcMain.handle('set-always-on-top', (_event, on) => {
   const wins = BrowserWindow.getAllWindows();
   for (const win of wins) {
+    if (win === timerWindow) continue;
     win.setAlwaysOnTop(on);
     if (on) win.setVisibleOnAllWorkspaces(true);
     else win.setVisibleOnAllWorkspaces(false);
   }
+});
+
+function createTimerWindow() {
+  if (timerWindow && !timerWindow.isDestroyed()) {
+    timerWindow.focus();
+    return;
+  }
+  timerWindow = new BrowserWindow({
+    width: 420,
+    height: 520,
+    minWidth: 320,
+    minHeight: 400,
+    frame: false,
+    alwaysOnTop: true,
+    resizable: true,
+    title: '计时器',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+  timerWindow.loadFile(path.join(__dirname, '..', 'dist', 'timer.html'));
+  timerWindow.center();
+
+  // Start sleep prevention
+  if (powerSaveBlockerId === null) {
+    powerSaveBlockerId = powerSaveBlocker.start('prevent-display-sleep');
+  }
+
+  timerWindow.on('closed', () => {
+    timerWindow = null;
+    if (powerSaveBlockerId !== null) {
+      powerSaveBlocker.stop(powerSaveBlockerId);
+      powerSaveBlockerId = null;
+    }
+    // Notify main renderer so UI can reflect state
+    const mainWin = BrowserWindow.getAllWindows().find(w => !w.isDestroyed() && w !== timerWindow);
+    if (mainWin) mainWin.webContents.send('timer-window-closed');
+  });
+}
+
+ipcMain.handle('open-timer-window', () => {
+  createTimerWindow();
+  return { ok: true };
+});
+
+ipcMain.handle('close-timer-window', () => {
+  if (timerWindow && !timerWindow.isDestroyed()) {
+    timerWindow.close();
+  }
+  return { ok: true };
 });
 
 ipcMain.handle('load-receiver-config', () => loadConfig());

@@ -31,6 +31,7 @@ export function ReceiverPage() {
   const [schedule, setSchedule] = useState<{ start: string; end: string }[]>([]);
   const [scheduleActive, setScheduleActive] = useState(false);
   const [receiverNickname, setReceiverNickname] = useState(() => localStorage.getItem('classroom-receiver-nickname') || '');
+  const [timerWindowOpen, setTimerWindowOpen] = useState(false);
 
   const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scheduleActiveRef = useRef(false);
@@ -137,6 +138,11 @@ export function ReceiverPage() {
     const shouldFloat = currentCall && schedule.length > 0 && scheduleActive;
     electronApi.setAlwaysOnTop(!!shouldFloat);
   }, [currentCall, schedule, scheduleActive]);
+
+  // Listen for timer window close from Electron
+  useEffect(() => {
+    electronApi.onTimerWindowClosed(() => setTimerWindowOpen(false));
+  }, []);
 
   // Fetch cached messages on reconnect
   useEffect(() => {
@@ -298,6 +304,11 @@ export function ReceiverPage() {
     setGatePinError('');
   };
 
+  const handleOpenTimer = useCallback(async () => {
+    await electronApi.openTimerWindow();
+    setTimerWindowOpen(true);
+  }, []);
+
   const statusLabel: Record<MqttStatus, string> = {
     disconnected: '未连接',
     connecting: '连接中...',
@@ -438,6 +449,9 @@ export function ReceiverPage() {
         )}
         <button className="settings-toggle-btn" onClick={handleToggleSettings}>
           {showSettings ? '收起设置' : 'TTS 设置'}
+        </button>
+        <button className="timer-btn" onClick={handleOpenTimer} title="计时器 / 时钟">
+          ⏱️ 计时器
         </button>
       </div>
 

@@ -7,4 +7,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setAlwaysOnTop: (on) => ipcRenderer.invoke('set-always-on-top', on),
   loadConfig: () => ipcRenderer.invoke('load-receiver-config'),
   saveConfig: (config) => ipcRenderer.invoke('save-receiver-config', config),
+  openTimerWindow: () => ipcRenderer.invoke('open-timer-window'),
+  closeTimerWindow: () => ipcRenderer.invoke('close-timer-window'),
+  onTimerWindowClosed: (callback) => {
+    ipcRenderer.on('timer-window-closed', () => callback());
+  },
 });

@@ -380,6 +380,19 @@
   background: var(--border);
 }
 
+.timer-btn {
+  background: var(--bg-card);
+  color: var(--primary);
+  border: 2px solid var(--primary) !important;
+  font-weight: 600;
+}
+
+.timer-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
 .settings-panel {
   background: var(--bg-card);
   border-radius: var(--radius);
