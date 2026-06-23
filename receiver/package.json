@@ -3,6 +3,9 @@
   "version": "1.5.0",
   "private": true,
   "type": "module",
+  "description": "Classroom Receiver — MQTT-based classroom notification display with TTS and homework tracking",
+  "author": "InklingYoshi584",
+  "repository": "github:InklingYoshi584/classroom-util",
   "main": "electron/main.mjs",
   "scripts": {
     "dev": "vite",
