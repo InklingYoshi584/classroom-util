@@ -253,8 +253,7 @@ body.flash { animation: flashBg 0.3s ease-in-out 3; }
 }
 
 /* ── Running state: hide distractions ── */
-body.running .mode-selector,
-body.running .clock-section,
+body.running:not([data-mode="both"]) .clock-section,
 body.running .divider,
 body.running .presets,
 body.running .custom-input,
@@ -356,6 +355,7 @@ function updateModeUI() {
   countdownSection.style.display = (mode === 'countdown' || mode === 'both') ? '' : 'none';
   divider.style.display = (mode === 'both') ? '' : 'none';
   modeButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.body.dataset.mode = mode;
 }
 
 function formatClock(date) {
