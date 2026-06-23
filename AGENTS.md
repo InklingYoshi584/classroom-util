@@ -59,6 +59,7 @@ Both `sender/vite.config.ts` and `receiver/vite.config.ts` proxy `/api` → `htt
 
 `feat:` prefix, short message. Example: `feat: persist PINs and students to server data.json`
 
+- **Agent commits after completing work.** After each turn that produces working changes, write a conventional commit message summarizing what changed and run `git add -A && git commit -m "..."`. Don't wait for the user to ask.
 ## Key gotchas
 
 - **Install at root does nothing.** Each package needs its own `npm install`.
