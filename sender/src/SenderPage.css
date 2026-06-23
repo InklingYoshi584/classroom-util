@@ -1160,3 +1160,258 @@
   background: var(--btn-disabled-bg);
   cursor: not-allowed;
 }
+
+/* ── Custom message buttons row ── */
+.custom-msg-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.insert-student-btn,
+.save-template-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.insert-student-btn:hover,
+.save-template-btn:hover {
+  background: var(--border);
+}
+
+.insert-student-btn:disabled,
+.save-template-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Template list in custom area ── */
+.template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.template-list-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  gap: 8px;
+}
+
+.template-list-item-text {
+  flex: 1;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-list-item-text:hover {
+  color: var(--primary);
+}
+
+.template-list-item-del {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.template-list-item-del:hover {
+  background: var(--danger-lighter);
+  color: var(--danger);
+}
+
+/* ── Student picker overlay ── */
+.student-picker {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn 0.2s;
+}
+
+.student-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.student-picker-header h3 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.student-picker-search {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  background: var(--bg);
+  margin-bottom: 10px;
+  transition: border-color 0.15s;
+}
+
+.student-picker-search:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.student-picker-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.student-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.student-picker-item:hover {
+  background: var(--bg-hover, var(--border));
+}
+
+.student-picker-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.student-picker-pinyin {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-left: 8px;
+}
+
+.student-picker-footer {
+  display: flex;
+  justify-content: center;
+}
+
+.student-picker-footer .cancel-btn {
+  padding: 8px 24px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: none;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.student-picker-footer .cancel-btn:hover {
+  background: var(--muted-hover);
+}
+
+/* ── Student management in settings ── */
+.student-mgmt-section .student-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.student-card-settings {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  gap: 10px;
+}
+
+.student-card-settings .index {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.student-card-settings .name {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.student-card-settings .name-input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 2px solid var(--primary);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: var(--bg-card);
+  outline: none;
+}
+
+.student-card-settings .actions {
+  display: flex;
+  gap: 4px;
+}
+
+.student-card-settings .actions button {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.student-card-settings .actions .edit-btn:hover {
+  background: var(--info-lighter);
+}
+
+.student-card-settings .actions .delete-btn:hover {
+  background: var(--danger-lighter);
+}

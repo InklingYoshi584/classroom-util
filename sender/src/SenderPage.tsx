@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createMqttClient, MqttClientHandle, MqttStatus, CallMessage } from './lib/mqtt';
-import { buildCallMessage, buildCustomMessage, renderTemplate } from './lib/template';
-import { loadClassId, saveClassId, loadStudents, saveStudents, loadMessageTemplate, saveMessageTemplate, loadMessageTemplates, saveMessageTemplates, DEFAULT_MSG_TEMPLATE } from './lib/store';
+import { buildCustomMessage, renderTemplate } from './lib/template';
+import { loadClassId, saveClassId, loadStudents, saveStudents, loadSavedTemplates, saveSavedTemplates } from './lib/store';
 import { getPinStatus, verifyPin, setPin, removePin, listPins } from './lib/pin';
 import { parseStudentCsv } from './lib/csv';
+import { searchStudents, toPinyin } from './lib/pinyin-search';
 import { HomeworkTracker } from './HomeworkTracker';
 import './SenderPage.css';
 
@@ -15,15 +16,9 @@ export function SenderPage() {
   const [newName, setNewName] = useState('');
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editingName, setEditingName] = useState('');
-  const [confirmStudent, setConfirmStudent] = useState<string | null>(null);
   const [status, setStatus] = useState<MqttStatus>('disconnected');
   const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
   const [history, setHistory] = useState<{ name: string; time: string }[]>([]);
-  const [msgTemplate, setMsgTemplate] = useState(() => loadMessageTemplate());
-  const [msgTemplates, setMsgTemplates] = useState<string[]>(() => loadMessageTemplates());
-  const [selectedTemplateIdx, setSelectedTemplateIdx] = useState(0);
-  const [editingTemplateIdx, setEditingTemplateIdx] = useState<number | null>(null);
-  const [editingTemplateVal, setEditingTemplateVal] = useState('');
   const [pinSet, setPinSet] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
@@ -34,9 +29,8 @@ export function SenderPage() {
   const [sudoNewPin, setSudoNewPin] = useState('');
   const [sudoError, setSudoError] = useState('');
   const [pinList, setPinList] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'students' | 'custom' | 'homework'>('students');
+  const [activeTab, setActiveTab] = useState<'custom' | 'homework'>('custom');
   const [customText, setCustomText] = useState('');
-  const [customConfirmOpen, setCustomConfirmOpen] = useState(false);
   const [adminAuthed, setAdminAuthed] = useState(false);
   const [adminPin, setAdminPin] = useState('');
   const [adminPinError, setAdminPinError] = useState('');
@@ -44,10 +38,19 @@ export function SenderPage() {
   const [senderNickname, setSenderNickname] = useState(() => localStorage.getItem('classroom-sender-nickname') || '');
   const [scheduleText, setScheduleText] = useState('');
   const [showConnectOverlay, setShowConnectOverlay] = useState(true);
-  const scheduleFileRef = useRef<HTMLInputElement>(null);
 
+  // ── New state for custom message flow ──
+  const [savedTemplates, setSavedTemplates] = useState<string[]>(() => loadSavedTemplates());
+  const [showStudentPicker, setShowStudentPicker] = useState(false);
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
+  const [studentPickerMode, setStudentPickerMode] = useState<'insert' | 'send'>('insert');
+  const [pendingTemplate, setPendingTemplate] = useState<string | null>(null);
+  const [showTemplateConfirm, setShowTemplateConfirm] = useState(false);
+
+  const scheduleFileRef = useRef<HTMLInputElement>(null);
   const mqttRef = useRef<MqttClientHandle | null>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const mqtt = createMqttClient();
@@ -171,44 +174,74 @@ export function SenderPage() {
     if (e.key === 'Enter') handleConnect();
   };
 
-  const handleStudentClick = (name: string) => {
-    setConfirmStudent(name);
-    setPinInput('');
-    setPinError('');
-  };
-
-  const handleConfirmSend = async () => {
-    if (!confirmStudent) return;
-    if (pinSet) {
-      const ok = await verifyPin('', pinInput);
-      if (ok !== 'ok') {
-        setPinError('PIN 错误');
-        return;
-      }
-    }
-    const raw = buildCallMessage(confirmStudent, msgTemplates[selectedTemplateIdx] || msgTemplate, mqttRef.current?.clientId || undefined, senderNickname || undefined);
-    const msg: CallMessage = JSON.parse(raw);
-    const ok = mqttRef.current?.publish(msg);
-    if (ok) {
-      setToast({ msg: `已发送: ${confirmStudent}` });
-      setHistory((h) => [{ name: confirmStudent, time: msg.time }, ...h].slice(0, 20));
+  // ── Custom message send flow ──
+  const handleSendClick = () => {
+    const text = customText.trim();
+    if (!text || !isConnected) return;
+    if (text.includes('{name}')) {
+      setPendingTemplate(text);
+      setStudentPickerMode('send');
+      setStudentSearchQuery('');
+      setShowStudentPicker(true);
     } else {
-      setToast({ msg: '发送失败，检查连接状态', error: true });
+      setPinInput('');
+      setPinError('');
+      setShowTemplateConfirm(true);
     }
-    setConfirmStudent(null);
-    setCustomConfirmOpen(false);
-    setPinInput('');
-    setPinError('');
   };
 
-  const handleCancelConfirm = () => {
-    setConfirmStudent(null);
-    setCustomConfirmOpen(false);
-    setPinInput('');
-    setPinError('');
+  const handleTemplateClick = (template: string) => {
+    if (template.includes('{name}')) {
+      setPendingTemplate(template);
+      setStudentPickerMode('send');
+      setStudentSearchQuery('');
+      setShowStudentPicker(true);
+    } else {
+      setCustomText(template);
+    }
   };
 
-  const handleCustomConfirm = async () => {
+  const handleInsertStudentName = () => {
+    setStudentPickerMode('insert');
+    setStudentSearchQuery('');
+    setShowStudentPicker(true);
+  };
+
+  const handleStudentPickerSelect = (name: string) => {
+    if (studentPickerMode === 'insert') {
+      const ta = textareaRef.current;
+      if (ta) {
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        const before = customText.slice(0, start);
+        const after = customText.slice(end);
+        const newText = before + '{name}' + after;
+        setCustomText(newText);
+        // Restore cursor after the inserted text
+        requestAnimationFrame(() => {
+          ta.focus();
+          ta.selectionStart = ta.selectionEnd = start + '{name}'.length;
+        });
+      } else {
+        setCustomText(customText + '{name}');
+      }
+      setShowStudentPicker(false);
+      setStudentSearchQuery('');
+    } else {
+      // mode === 'send'
+      const rendered = renderTemplate(pendingTemplate || '', { name });
+      setCustomText(rendered);
+      setShowStudentPicker(false);
+      setStudentSearchQuery('');
+      setPendingTemplate(null);
+      // Auto-open confirm
+      setPinInput('');
+      setPinError('');
+      setShowTemplateConfirm(true);
+    }
+  };
+
+  const handleConfirmSendCustom = async () => {
     const text = customText.trim();
     if (!text) return;
     if (pinSet) {
@@ -222,13 +255,19 @@ export function SenderPage() {
     const msg: CallMessage = JSON.parse(raw);
     const ok = mqttRef.current?.publish(msg);
     if (ok) {
-      setToast({ msg: '已发送自定义消息' });
-      setHistory((h) => [{ name: '自定义', time: msg.time }, ...h].slice(0, 20));
-      setCustomText('');
+      setToast({ msg: '已发送' });
+      setHistory((h) => [{ name: msg.message, time: msg.time }, ...h].slice(0, 20));
     } else {
-      setToast({ msg: '发送失败，检查连接状态', error: true });
+      setToast({ msg: '发送失败', error: true });
     }
-    setCustomConfirmOpen(false);
+    setShowTemplateConfirm(false);
+    setCustomText('');
+    setPinInput('');
+    setPinError('');
+  };
+
+  const handleCancelTemplateConfirm = () => {
+    setShowTemplateConfirm(false);
     setPinInput('');
     setPinError('');
   };
@@ -236,10 +275,23 @@ export function SenderPage() {
   const handleCustomKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && customText.trim()) {
       e.preventDefault();
-      setPinInput('');
-      setPinError('');
-      setCustomConfirmOpen(true);
+      handleSendClick();
     }
+  };
+
+  const handleSaveTemplate = () => {
+    const text = customText.trim();
+    if (!text) return;
+    const next = [...savedTemplates, text];
+    setSavedTemplates(next);
+    saveSavedTemplates(next);
+    setToast({ msg: '已保存模板' });
+  };
+
+  const handleDeleteTemplate = (idx: number) => {
+    const next = savedTemplates.filter((_, i) => i !== idx);
+    setSavedTemplates(next);
+    saveSavedTemplates(next);
   };
 
   // ── Sudo flow ──
@@ -310,7 +362,6 @@ export function SenderPage() {
     setSudoError('');
     setPinList([]);
     refreshPinInfo();
-    // admin stays if independently authed
   };
 
   const handleAdminVerify = async () => {
@@ -341,6 +392,10 @@ export function SenderPage() {
 
   const isConnected = status === 'connected';
   const classIdTrimmed = classId.trim();
+
+  const filteredStudents = studentSearchQuery.trim()
+    ? searchStudents(studentSearchQuery, students)
+    : students;
 
   return (
     <div className="sender-page">
@@ -391,6 +446,74 @@ export function SenderPage() {
               </div>
             </label>
           </div>
+
+          {/* ── Student management (admin only) ── */}
+          {isAdmin && (
+            <div className="settings-section student-mgmt-section">
+              <h4>学生管理</h4>
+              <div className="add-student">
+                <input
+                  type="text"
+                  placeholder="新增学生姓名"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onKeyDown={handleAddKeyDown}
+                />
+                <button onClick={handleAdd} disabled={!newName.trim()}>
+                  + 添加
+                </button>
+                <button className="csv-import-btn" onClick={() => csvInputRef.current?.click()} title="CSV 导入">
+                  CSV
+                </button>
+                <input
+                  ref={csvInputRef}
+                  type="file"
+                  accept=".csv,.txt"
+                  style={{ display: 'none' }}
+                  onChange={handleCsvImport}
+                />
+              </div>
+              {students.length === 0 ? (
+                <div className="student-list-empty">暂无学生，使用上方输入框或 CSV 导入添加</div>
+              ) : (
+                <div className="student-list">
+                  {students.map((name, idx) => (
+                    <div key={`${idx}-${name}`} className="student-card-settings">
+                      <span className="index">{idx + 1}</span>
+                      {editingIdx === idx ? (
+                        <input
+                          className="name-input"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onBlur={() => handleEditSave(idx)}
+                          onKeyDown={(e) => handleEditKeyDown(e, idx)}
+                          autoFocus
+                        />
+                      ) : (
+                        <span className="name">{name}</span>
+                      )}
+                      <div className="actions">
+                        <button
+                          className="edit-btn"
+                          title="编辑"
+                          onClick={() => handleEditStart(idx)}
+                        >
+                          &#9998;
+                        </button>
+                        <button
+                          className="delete-btn"
+                          title="删除"
+                          onClick={() => handleDelete(idx)}
+                        >
+                          &#10005;
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="pin-status-row">
             <span>PIN 数量:</span>
@@ -563,78 +686,6 @@ export function SenderPage() {
             </div>
           )}
 
-          <div className="msg-template-label">消息模板</div>
-          {isAdmin ? (
-            <div className="msg-templates-editor">
-              {msgTemplates.map((t, i) => (
-                <div key={i} className="msg-template-item">
-                  {editingTemplateIdx === i ? (
-                    <input
-                      type="text"
-                      className="msg-template-input"
-                      value={editingTemplateVal}
-                      onChange={(e) => setEditingTemplateVal(e.target.value)}
-                      onBlur={() => {
-                        if (editingTemplateVal.trim()) {
-                          const next = [...msgTemplates];
-                          next[i] = editingTemplateVal.trim();
-                          setMsgTemplates(next);
-                          saveMessageTemplates(next);
-                        }
-                        setEditingTemplateIdx(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                        if (e.key === 'Escape') setEditingTemplateIdx(null);
-                      }}
-                      autoFocus
-                    />
-                  ) : (
-                    <span className="msg-template-item-text" onClick={() => { setEditingTemplateIdx(i); setEditingTemplateVal(t); }}>{t}</span>
-                  )}
-                  <button className="msg-template-del" onClick={() => {
-                    const next = msgTemplates.filter((_, j) => j !== i);
-                    setMsgTemplates(next);
-                    saveMessageTemplates(next);
-                    if (selectedTemplateIdx >= next.length) setSelectedTemplateIdx(Math.max(0, next.length - 1));
-                  }}>&#10005;</button>
-                </div>
-              ))}
-              <div className="msg-template-add-row">
-                <input
-                  type="text"
-                  className="msg-template-input"
-                  placeholder="新模板..."
-                  value={editingTemplateIdx === -1 ? editingTemplateVal : ''}
-                  onChange={(e) => { setEditingTemplateIdx(-1); setEditingTemplateVal(e.target.value); }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && editingTemplateVal.trim()) {
-                      const next = [...msgTemplates, editingTemplateVal.trim()];
-                      setMsgTemplates(next);
-                      saveMessageTemplates(next);
-                      setEditingTemplateIdx(null);
-                      setEditingTemplateVal('');
-                    }
-                  }}
-                />
-                <button className="msg-template-add-btn" onClick={() => {
-                  if (!editingTemplateVal.trim()) return;
-                  const next = [...msgTemplates, editingTemplateVal.trim()];
-                  setMsgTemplates(next);
-                  saveMessageTemplates(next);
-                  setEditingTemplateIdx(null);
-                  setEditingTemplateVal('');
-                }}>+</button>
-              </div>
-              <span className="msg-template-hint">{'{name}'} = 学生姓名</span>
-            </div>
-          ) : (
-            <div className="msg-template-lock">
-              <span className="msg-template-preview">当前: {msgTemplate}</span>
-              <span className="msg-template-hint">Admin 模式可以更改</span>
-            </div>
-          )}
-
           <div className="msg-template-label">发送者昵称</div>
           <input
             type="text"
@@ -660,33 +711,23 @@ export function SenderPage() {
             </div>
 
             <div className="help-section">
-              <h3>📞 呼叫学生</h3>
-              <p>先输入班级 ID（如 <code>g8c</code>）点击连接，然后点击学生姓名就能发起语音呼叫。学生姓名下方的预览会显示实际播报的内容。</p>
-            </div>
-
-            <div className="help-section">
-              <h3>🔒 Admin 模式（管理学生 / 消息模板）</h3>
-              <p>点击⚙设置 → 输入 PIN 进入 Admin 模式。解锁后可以添加或删除学生、导入 CSV 名单、管理多条消息模板。</p>
-            </div>
-
-            <div className="help-section">
-              <h3>🔑 Sudo 模式（管理 PIN / 课表）</h3>
-              <p>输入 Sudo 密码进入 Sudo 模式。可以添加/删除 PIN 码，以及设置上课时间表。课表导入支持 <code>.txt</code> 文件，格式：每行一个时间段，例如 <code>10:10-10:50</code>。</p>
-            </div>
-
-            <div className="help-section">
               <h3>📝 自定义消息</h3>
-              <p>在"自定义消息"标签页，输入任意文字发送到接收端。可以用作通知、提醒等。</p>
+              <p>输入任意文字发送到接收端。支持插入学生姓名占位符 <code>{'{name}'}</code>，发送时会自动替换为选中的学生姓名。</p>
+            </div>
+
+            <div className="help-section">
+              <h3>💾 消息模板</h3>
+              <p>将常用消息保存为模板，后续可一键复用。含 <code>{'{name}'}</code> 的模板点击后需要先选择学生。</p>
+            </div>
+
+            <div className="help-section">
+              <h3>🔒 管理设置（设置 → Admin / Sudo）</h3>
+              <p>点击⚙设置进入管理面板。Admin 模式可管理学生名单；Sudo 模式可管理 PIN 码和课表。</p>
             </div>
 
             <div className="help-section">
               <h3>📚 作业追踪</h3>
-              <p>在"作业"标签页管理每日任务。点击单元格切换未交/已交/请假状态。支持导出图片和 Excel，也可以导入之前备份的 JSON 数据。</p>
-            </div>
-
-            <div className="help-section">
-              <h3>🔄 多消息模板</h3>
-              <p>Admin 模式下可以添加多条消息模板，发送呼叫时可以选择用哪一条。支持添加、编辑（点击文本）、删除模板。</p>
+              <p>在"作业"标签页管理每日任务。点击单元格切换未交/已交/请假状态。支持导出图片和 Excel。</p>
             </div>
 
             <div className="help-section">
@@ -696,12 +737,12 @@ export function SenderPage() {
 
             <div className="help-section">
               <h3>🕐 上课时间表</h3>
-              <p>Sudo 模式下可以设置课表。上课时段呼叫自动弹窗显示（5秒后消失），下课期间正常播放语音。仅在 Electron 桌面版弹窗窗口会置顶。</p>
+              <p>Sudo 模式下可以设置课表。上课时段呼叫自动弹窗显示（5秒后消失），下课期间正常播放语音。</p>
             </div>
 
             <div className="help-section">
               <h3>📋 接收端操作</h3>
-              <p>接收端也要输入同样的班级 ID 来订阅频道。在呼叫记录中可以点"呼叫老师"回呼发送端。首次使用需要先点"启用语音"解锁语音播报。</p>
+              <p>接收端也要输入同样的班级 ID 来订阅频道。首次使用需要先点"启用语音"解锁语音播报。</p>
             </div>
 
             <div className="help-section">
@@ -709,7 +750,7 @@ export function SenderPage() {
               <ul>
                 <li>发送端页面由服务器托管，其他设备浏览器直接访问 <code>http://服务器IP:8787</code></li>
                 <li>PIN 码默认不需要，首次设置后才会启用</li>
-                <li>消息模板变量 <code>{'{name}'}</code> 会自动替换为学生姓名</li>
+                <li>学生姓名支持中文、拼音全拼、拼音首字母搜索</li>
               </ul>
             </div>
           </div>
@@ -753,12 +794,6 @@ export function SenderPage() {
         <>
           <div className="tab-bar">
             <button
-              className={`tab-btn ${activeTab === 'students' ? 'active' : ''}`}
-              onClick={() => setActiveTab('students')}
-            >
-              学生呼叫
-            </button>
-            <button
               className={`tab-btn ${activeTab === 'custom' ? 'active' : ''}`}
               onClick={() => setActiveTab('custom')}
             >
@@ -781,110 +816,56 @@ export function SenderPage() {
                 mqttRef.current?.publish({ type: 'hw-sync', classId: connectedClass, timestamp: Date.now() });
               }}
             />
-          ) : activeTab === 'students' ? (
-            <>
-              {isAdmin && (
-                <div className="add-student">
-                  <input
-                    type="text"
-                    placeholder="新增学生姓名"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    onKeyDown={handleAddKeyDown}
-                  />
-                  <button onClick={handleAdd} disabled={!newName.trim()}>
-                    + 添加
-                  </button>
-                  <button className="csv-import-btn" onClick={() => csvInputRef.current?.click()} title="CSV 导入">
-                    CSV
-                  </button>
-                  <input
-                    ref={csvInputRef}
-                    type="file"
-                    accept=".csv,.txt"
-                    style={{ display: 'none' }}
-                    onChange={handleCsvImport}
-                  />
-                </div>
-              )}
-
-              <div className="student-list">
-                  {students.length === 0 && (
-                    <div className="student-list-empty">
-                      {isAdmin ? '暂无学生，使用上方输入框或 CSV 导入添加' : '暂无学生，请在设置中进入 Admin 模式后添加'}
-                    </div>
-                  )}
-                {students.map((name, idx) => (
-                  <div
-                    key={`${idx}-${name}`}
-                    className="student-card"
-                    onClick={() => handleStudentClick(name)}
-                  >
-                    <span className="index">{idx + 1}</span>
-                    {editingIdx === idx ? (
-                      <input
-                        className="name-input"
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        onBlur={() => handleEditSave(idx)}
-                        onKeyDown={(e) => handleEditKeyDown(e, idx)}
-                        autoFocus
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    ) : (
-                      <span className="name">{name}</span>
-                    )}
-                    <div className="actions">
-                      {isAdmin && (
-                        <>
-                          <button
-                            className="edit-btn"
-                            title="编辑"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditStart(idx);
-                            }}
-                          >
-                            &#9998;
-                          </button>
-                          <button
-                            className="delete-btn"
-                            title="删除"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(idx);
-                            }}
-                          >
-                            &#10005;
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
           ) : (
             <div className="custom-message-section">
               <textarea
+                ref={textareaRef}
                 className="custom-textarea"
-                placeholder="输入自定义消息内容..."
+                placeholder="输入自定义消息内容... (使用 {name} 代表学生姓名)"
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
                 onKeyDown={handleCustomKeyDown}
                 rows={4}
               />
+              <div className="custom-msg-buttons">
+                <button
+                  className="insert-student-btn"
+                  onClick={handleInsertStudentName}
+                  disabled={!isConnected}
+                >
+                  &#128101; 插入学生姓名
+                </button>
+                <button
+                  className="save-template-btn"
+                  onClick={handleSaveTemplate}
+                  disabled={!customText.trim()}
+                >
+                  &#128190; 保存模板
+                </button>
+              </div>
+              {savedTemplates.length > 0 && (
+                <div className="template-list">
+                  {savedTemplates.map((t, i) => (
+                    <div key={i} className="template-list-item">
+                      <span className="template-list-item-text" onClick={() => handleTemplateClick(t)}>
+                        {t}
+                      </span>
+                      <button
+                        className="template-list-item-del"
+                        onClick={() => handleDeleteTemplate(i)}
+                      >
+                        &#10005;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <button
                 className="custom-send-btn"
-                onClick={() => {
-                  if (!customText.trim() || !isConnected) return;
-                  setPinInput('');
-                  setPinError('');
-                  setCustomConfirmOpen(true);
-                }}
+                onClick={handleSendClick}
                 disabled={!customText.trim() || !isConnected}
               >
-                {isConnected ? '发送' : '未连接'}
+                {isConnected ? '发送消息' : '未连接'}
               </button>
             </div>
           )}
@@ -904,29 +885,58 @@ export function SenderPage() {
         </div>
       )}
 
-      {(confirmStudent || customConfirmOpen) && (
-        <div className="overlay" onClick={handleCancelConfirm}>
-          <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
-            <h2>确认呼叫</h2>
-            <div className="student-name-highlight">{confirmStudent || '自定义消息'}</div>
-            <div className="preview-text">
-              {confirmStudent
-                ? renderTemplate(msgTemplates[selectedTemplateIdx] || msgTemplate, { name: confirmStudent })
-                : customText}
+      {/* ── Student picker overlay ── */}
+      {showStudentPicker && (
+        <div className="overlay" onClick={() => { setShowStudentPicker(false); setStudentSearchQuery(''); }}>
+          <div className="student-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="student-picker-header">
+              <h3>选择学生</h3>
+              <button className="close-btn" onClick={() => { setShowStudentPicker(false); setStudentSearchQuery(''); }}>&#10005;</button>
             </div>
-            {confirmStudent && msgTemplates.length > 1 && (
-              <div className="template-select-row">
-                <select
-                  className="template-select"
-                  value={selectedTemplateIdx}
-                  onChange={(e) => setSelectedTemplateIdx(Number(e.target.value))}
-                >
-                  {msgTemplates.map((t, i) => (
-                    <option key={i} value={i}>{t}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <input
+              type="text"
+              className="student-picker-search"
+              placeholder="搜索姓名 / 拼音..."
+              value={studentSearchQuery}
+              onChange={(e) => setStudentSearchQuery(e.target.value)}
+              autoFocus
+            />
+            <div className="student-picker-list">
+              {filteredStudents.length === 0 ? (
+                <div className="student-list-empty">
+                  {students.length === 0 ? '暂无学生，请先在设置中添加' : '无匹配学生'}
+                </div>
+              ) : (
+                filteredStudents.map((name) => (
+                  <div
+                    key={name}
+                    className="student-picker-item"
+                    onClick={() => handleStudentPickerSelect(name)}
+                  >
+                    <span className="student-picker-name">{name}</span>
+                    <span className="student-picker-pinyin">{toPinyin(name)}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="student-picker-footer">
+              <button
+                className="cancel-btn"
+                onClick={() => { setShowStudentPicker(false); setStudentSearchQuery(''); }}
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Send confirmation overlay ── */}
+      {showTemplateConfirm && (
+        <div className="overlay" onClick={handleCancelTemplateConfirm}>
+          <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
+            <h2>确认发送</h2>
+            <div className="preview-text">{customText}</div>
             {pinSet && (
               <div className="pin-row">
                 <input
@@ -938,22 +948,22 @@ export function SenderPage() {
                     setPinInput(e.target.value);
                     setPinError('');
                   }}
-                  onKeyDown={(e) => e.key === 'Enter' && (confirmStudent ? handleConfirmSend() : handleCustomConfirm())}
+                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmSendCustom()}
                   autoFocus
                 />
                 {pinError && <div className="pin-error">{pinError}</div>}
               </div>
             )}
             <div className="buttons">
-              <button className="cancel-btn" onClick={handleCancelConfirm}>
+              <button className="cancel-btn" onClick={handleCancelTemplateConfirm}>
                 取消
               </button>
               <button
                 className="confirm-btn"
-                onClick={confirmStudent ? handleConfirmSend : handleCustomConfirm}
+                onClick={handleConfirmSendCustom}
                 disabled={!isConnected}
               >
-                {isConnected ? '确认呼叫' : '未连接'}
+                {isConnected ? '确认发送' : '未连接'}
               </button>
             </div>
           </div>

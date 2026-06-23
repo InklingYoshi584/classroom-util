@@ -59,3 +59,16 @@ export async function saveStudents(classId: string, students: string[]): Promise
     return false;
   }
 }
+
+const SAVED_TEMPLATES_KEY = 'classroom-sender-saved-templates';
+
+export function loadSavedTemplates(): string[] {
+  try {
+    const raw = localStorage.getItem(SAVED_TEMPLATES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+export function saveSavedTemplates(templates: string[]) {
+  localStorage.setItem(SAVED_TEMPLATES_KEY, JSON.stringify(templates));
+}
