@@ -497,7 +497,7 @@
   align-items: center;
   justify-content: center;
   background: var(--bg-card);
-  border-radius: 14px;
+  border-radius: var(--radius);
   box-shadow: var(--shadow);
   margin-bottom: 16px;
   overflow: hidden;
@@ -690,10 +690,10 @@
 }
 
 .audio-warning {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--conn-connecting-bg);
+  color: var(--conn-connecting-text);
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-size: 0.85rem;
   margin-bottom: 12px;
 }
@@ -717,7 +717,7 @@
 
 .pin-gate-dialog {
   background: var(--bg-card);
-  border-radius: 14px;
+  border-radius: var(--radius);
   padding: 24px;
   width: 90%;
   max-width: 340px;

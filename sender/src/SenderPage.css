@@ -419,7 +419,7 @@
 
 .confirm-dialog {
   background: var(--bg-card);
-  border-radius: 14px;
+  border-radius: var(--radius);
   padding: 24px;
   width: 90%;
   max-width: 360px;
