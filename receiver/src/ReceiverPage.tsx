@@ -436,40 +436,7 @@ export function ReceiverPage() {
                 <h3>呼叫记录</h3>
                 <button className="clear-btn" onClick={handleClearHistory}>清空</button>
               </div>
-              <div className="callback-row">
-                <select
-                  className="callback-select"
-                  value=""
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (!val) return;
-                    mqttRef.current?.publish({
-                      type: 'call-sender',
-                      id: crypto.randomUUID?.() ?? `${Date.now()}`,
-                      targetClientId: val,
-                      message: '接收端呼叫',
-                      time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-                      timestamp: Date.now(),
-                      nickname: receiverNickname || undefined,
-                      classId: classIdTrimmed,
-                    });
-                    e.target.value = '';
-                  }}
-                >
-                  <option value="">呼叫老师...</option>
-                  {(() => {
-                    const seen = new Map<string, string>();
-                    history.forEach((h) => {
-                      if (h.senderId && h.nickname && !seen.has(h.senderId)) {
-                        seen.set(h.senderId, h.nickname);
-                      }
-                    });
-                    return [...seen].map(([id, nick]) => (
-                      <option key={id} value={id}>{nick}</option>
-                    ));
-                  })()}
-                </select>
-              </div>
+              {/* 呼叫老师功能已隐藏 */}
               {history.map((h) => (
                 <div key={h.id} className="history-item">
                   <span className="dot" />
