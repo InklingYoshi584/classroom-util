@@ -90,8 +90,8 @@ export function SenderPage() {
   }, []);
 
   useEffect(() => {
-    if (status === 'connected') setShowConnectOverlay(false);
-  }, [status]);
+    if (connectedClass || status === 'connected') setShowConnectOverlay(false);
+  }, [connectedClass, status]);
 
   const handleConnect = useCallback(() => {
     const trimmed = classId.trim();
@@ -717,8 +717,8 @@ export function SenderPage() {
       )}
 
       {showConnectOverlay && (
-        <div className="overlay">
-          <div className="connect-dialog">
+        <div className="overlay" onClick={() => setShowConnectOverlay(false)}>
+          <div className="connect-dialog" onClick={(e) => e.stopPropagation()}>
             <h3>连接班级</h3>
             <p>请输入班级 ID 以开始发送呼叫</p>
             <div className="connect-dialog-fields">
@@ -737,6 +737,14 @@ export function SenderPage() {
             >
               {status === 'connecting' ? '连接中...' : '连接班级'}
             </button>
+            <div style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              <button
+                onClick={() => setShowConnectOverlay(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.8rem' }}
+              >
+                稍后设置
+              </button>
+            </div>
           </div>
         </div>
       )}

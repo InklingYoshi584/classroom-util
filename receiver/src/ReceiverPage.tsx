@@ -22,7 +22,6 @@ export function ReceiverPage() {
   const [pinVerified, setPinVerified] = useState(false);
   const [gatePinInput, setGatePinInput] = useState('');
   const [gatePinError, setGatePinError] = useState('');
-  const [showHomework, setShowHomework] = useState(false);
   const [configLocked, setConfigLocked] = useState(false);
   const [configUnlockPin, setConfigUnlockPin] = useState('');
   const [configPinError, setConfigPinError] = useState('');
@@ -389,7 +388,7 @@ export function ReceiverPage() {
             <button className="timer-btn" onClick={handleOpenTimer} title="计时器 / 时钟">
               ⏱️ 计时器
             </button>
-            <button className="homework-btn" onClick={() => setShowHomework(true)}>
+            <button className="homework-btn" onClick={() => electronApi.openHomeworkWindow(classIdTrimmed, serverHost.trim())}>
               作业
             </button>
           </div>
@@ -630,25 +629,6 @@ export function ReceiverPage() {
         </div>
       )}
 
-      {/* ── Homework overlay ── */}
-      {showHomework && (
-        <div className="overlay" onClick={() => setShowHomework(false)}>
-          <div className="homework-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="homework-dialog-header">
-              <h3>作业追踪</h3>
-              <button className="close-btn" onClick={() => setShowHomework(false)}>&#10005;</button>
-            </div>
-            <HomeworkTracker
-              classId={classIdTrimmed}
-              serverHost={serverHost.trim()}
-              reloadTrigger={hwReloadTrigger}
-              onDataSaved={() => {
-                mqttRef.current?.publish({ type: 'hw-sync', classId: classIdTrimmed, timestamp: Date.now() });
-              }}
-            />
-          </div>
-        </div>
-      )}
 
       {/* ── PIN gate dialog ── */}
       {pinRequired && (

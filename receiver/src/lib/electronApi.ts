@@ -13,6 +13,9 @@ interface ElectronHomeworkAPI {
   openTimerWindow: () => Promise<{ ok: boolean }>;
   closeTimerWindow: () => Promise<{ ok: boolean }>;
   onTimerWindowClosed: (callback: () => void) => void;
+  openHomeworkWindow: (classId: string, serverHost: string) => Promise<{ ok: boolean }>;
+  closeHomeworkWindow: () => Promise<{ ok: boolean }>;
+  onHomeworkWindowClosed: (callback: () => void) => void;
 }
 
 declare global {
@@ -77,6 +80,21 @@ export const electronApi: ElectronHomeworkAPI = {
   onTimerWindowClosed(callback: () => void) {
     if (window.electronAPI) {
       window.electronAPI.onTimerWindowClosed(callback);
+    }
+  },
+  async openHomeworkWindow(classId: string, serverHost: string) {
+    if (window.electronAPI) return window.electronAPI.openHomeworkWindow(classId, serverHost);
+    const params = new URLSearchParams({ classId, serverHost });
+    window.open(`/homework.html?${params}`, 'classroom-homework', 'width=900,height=700');
+    return { ok: true };
+  },
+  async closeHomeworkWindow() {
+    if (window.electronAPI) return window.electronAPI.closeHomeworkWindow();
+    return { ok: true };
+  },
+  onHomeworkWindowClosed(callback: () => void) {
+    if (window.electronAPI) {
+      window.electronAPI.onHomeworkWindowClosed(callback);
     }
   },
 };
