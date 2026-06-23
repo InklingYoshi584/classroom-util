@@ -1,6 +1,6 @@
 {
   "name": "classroom-receiver",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
   "main": "electron/main.mjs",
@@ -31,7 +31,11 @@
       "allowToChangeInstallationDirectory": true
     },
     "portable": {
-      "artifactName": "ClassroomReceiver.exe"
+      "artifactName": "ClassroomReceiver-${version}.exe"
+    },
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
     }
   },
   "dependencies": {
