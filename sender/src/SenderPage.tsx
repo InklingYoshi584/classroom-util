@@ -342,8 +342,8 @@ export function SenderPage() {
       <div className="sender-header">
         <h1>Classroom Caller · 发送端</h1>
         <div className="sender-actions">
-          <button className="help-btn" onClick={() => setShowHelp(true)} title="帮助">?</button>
-          <button className="settings-gear-btn" onClick={() => { setAdminPin(''); setAdminPinError(''); setShowSettings(!showSettings); }} title="设置">
+          <button className="help-btn" onClick={() => setShowHelp(true)} title="帮助" aria-label="帮助">?</button>
+          <button className="settings-gear-btn" onClick={() => { setAdminPin(''); setAdminPinError(''); setShowSettings(!showSettings); }} title="设置" aria-label="设置">
             &#9881;
           </button>
         </div>
