@@ -43,6 +43,7 @@ export function SenderPage() {
   const [hwReloadTrigger, setHwReloadTrigger] = useState(0);
   const [senderNickname, setSenderNickname] = useState(() => localStorage.getItem('classroom-sender-nickname') || '');
   const [scheduleText, setScheduleText] = useState('');
+  const [showConnectOverlay, setShowConnectOverlay] = useState(true);
   const scheduleFileRef = useRef<HTMLInputElement>(null);
 
   const mqttRef = useRef<MqttClientHandle | null>(null);
@@ -87,6 +88,10 @@ export function SenderPage() {
   useEffect(() => {
     getPinStatus().then((r) => setPinSet(r === 'set'));
   }, []);
+
+  useEffect(() => {
+    if (status === 'connected') setShowConnectOverlay(false);
+  }, [status]);
 
   const handleConnect = useCallback(() => {
     const trimmed = classId.trim();
@@ -355,10 +360,36 @@ export function SenderPage() {
       </div>
 
       {showSettings && (
-        <div className="settings-panel">
+        <div className="overlay" onClick={() => setShowSettings(false)}>
+          <div className="settings-dialog" onClick={(e) => e.stopPropagation()}>
           <div className="settings-panel-header">
             <h3>设置</h3>
             <button className="close-btn" onClick={() => setShowSettings(false)}>&#10005;</button>
+          </div>
+
+          <div className="settings-section">
+            <h4>班级连接</h4>
+            <label className="config-label">
+              班级 ID
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <input
+                  type="text"
+                  className="msg-template-input"
+                  placeholder="输入班级 ID (如 math-1)"
+                  value={classId}
+                  onChange={(e) => setClassId(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  className="msg-unlock-btn"
+                  onClick={handleConnect}
+                  disabled={!classIdTrimmed || status === 'connecting'}
+                >
+                  {status === 'connecting' ? '...' : '连接'}
+                </button>
+              </div>
+            </label>
           </div>
 
           <div className="pin-status-row">
@@ -617,6 +648,7 @@ export function SenderPage() {
           />
           <span className="msg-template-hint">接收端可以看到此昵称</span>
         </div>
+        </div>
       )}
 
       {showHelp && (
@@ -684,18 +716,30 @@ export function SenderPage() {
         </div>
       )}
 
-      <div className="class-selector">
-        <input
-          type="text"
-          placeholder="输入班级 ID (如 math-1)"
-          value={classId}
-          onChange={(e) => setClassId(e.target.value)}
-          onKeyDown={handleClassKeyDown}
-        />
-        <button onClick={handleConnect} disabled={!classIdTrimmed || status === 'connecting'}>
-          {status === 'connecting' ? '...' : '连接班级'}
-        </button>
-      </div>
+      {showConnectOverlay && (
+        <div className="overlay">
+          <div className="connect-dialog">
+            <h3>连接班级</h3>
+            <p>请输入班级 ID 以开始发送呼叫</p>
+            <div className="connect-dialog-fields">
+              <input
+                type="text"
+                placeholder="班级 ID (如 math-1)"
+                value={classId}
+                onChange={(e) => setClassId(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && classIdTrimmed && handleConnect()}
+              />
+            </div>
+            <button
+              className="config-reconnect-btn"
+              onClick={handleConnect}
+              disabled={!classIdTrimmed || status === 'connecting'}
+            >
+              {status === 'connecting' ? '连接中...' : '连接班级'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {connectedClass && (
         <>

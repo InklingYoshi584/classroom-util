@@ -1063,3 +1063,100 @@
   color: var(--text-secondary);
   line-height: 1.6;
 }
+
+/* ── Settings dialog (overlay) ── */
+.settings-dialog {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  width: 90%;
+  max-width: 440px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn 0.2s;
+}
+
+.settings-section {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.settings-section h4 {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+/* ── Connect dialog (cold start) ── */
+.connect-dialog {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  width: 90%;
+  max-width: 380px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  animation: scaleIn 0.2s;
+}
+
+.connect-dialog h3 {
+  font-size: 1.15rem;
+  margin-bottom: 6px;
+}
+
+.connect-dialog p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.connect-dialog-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.connect-dialog-fields input {
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  background: var(--bg);
+  transition: border-color 0.15s;
+}
+
+.connect-dialog-fields input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.connect-dialog .config-reconnect-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.15s;
+}
+
+.connect-dialog .config-reconnect-btn:hover {
+  background: var(--primary-dark);
+}
+
+.connect-dialog .config-reconnect-btn:disabled {
+  background: var(--btn-disabled-bg);
+  cursor: not-allowed;
+}
