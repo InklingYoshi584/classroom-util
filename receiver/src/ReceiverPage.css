@@ -117,7 +117,6 @@
   display: flex;
   gap: 0;
   margin-bottom: 12px;
-  border-bottom: 2px solid var(--border);
 }
 
 .tab-btn {
@@ -129,7 +128,6 @@
   color: var(--text-secondary);
   background: none;
   border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
   transition: color 0.15s, border-color 0.15s;
   cursor: pointer;
 }
