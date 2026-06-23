@@ -33,6 +33,11 @@
   --info-light: #dbeafe;
   --info-lighter: #bfdbfe;
   --muted-hover: #d1d5db;
+  --success-dark: #059669;
+  --btn-dark: #1f2937;
+  --btn-dark-hover: #374151;
+  --call-gradient-start: #4f46e5;
+  --call-gradient-end: #7c3aed;
   --z-overlay: 100;
   --z-toast: 200;
   --z-popup: 300;

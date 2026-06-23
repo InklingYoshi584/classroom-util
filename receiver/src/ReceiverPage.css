@@ -367,7 +367,7 @@
 }
 
 .audio-enable-btn:hover {
-  background: #059669;
+  background: var(--success-dark);
 }
 
 .settings-toggle-btn {
@@ -488,7 +488,7 @@
 }
 
 .save-btn:hover {
-  background: #059669;
+  background: var(--success-dark);
 }
 
 .call-display {
@@ -517,7 +517,7 @@
 }
 
 .call-display.active {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--call-gradient-start) 0%, var(--call-gradient-end) 100%);
   color: #fff;
   flex-direction: column;
   gap: 12px;
@@ -840,7 +840,7 @@
   bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  background: linear-gradient(135deg, var(--call-gradient-start), var(--call-gradient-end));
   color: #fff;
   border-radius: 12px;
   padding: 14px 18px;

@@ -167,13 +167,13 @@
 }
 
 .add-student button:hover {
-  background: #059669;
+  background: var(--success-dark);
 }
 
 .csv-import-btn {
   padding: 10px 20px;
   border-radius: var(--radius);
-  background: #1f2937;
+  background: var(--btn-dark);
   color: #fff;
   font-weight: 600;
   font-size: 0.85rem;
@@ -182,7 +182,7 @@
 }
 
 .csv-import-btn:hover {
-  background: #374151;
+  background: var(--btn-dark-hover);
 }
 
 /* ── Tabs ── */
@@ -587,7 +587,7 @@
 .sudo-btn {
   padding: 8px 18px;
   border-radius: 6px;
-  background: #1f2937;
+  background: var(--btn-dark);
   color: #fff;
   font-weight: 600;
   font-size: 0.85rem;
@@ -595,7 +595,7 @@
 }
 
 .sudo-btn:hover {
-  background: #374151;
+  background: var(--btn-dark-hover);
 }
 
 .sudo-section {
@@ -639,7 +639,7 @@
   font-size: 0.8rem;
   font-weight: 700;
   color: #fff;
-  background: #1f2937;
+  background: var(--btn-dark);
   padding: 3px 10px;
   border-radius: 4px;
 }

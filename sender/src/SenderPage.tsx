@@ -372,7 +372,7 @@ export function SenderPage() {
             <div className="admin-section">
               {adminAuthed ? (
                 <div className="sudo-authed-header">
-                  <span className="sudo-authed-badge" style={{ background: '#2563eb' }}>Admin</span>
+                  <span className="sudo-authed-badge" style={{ background: 'var(--primary)' }}>Admin</span>
                   <button className="logout-btn" onClick={handleAdminLogout}>退出</button>
                 </div>
               ) : (
