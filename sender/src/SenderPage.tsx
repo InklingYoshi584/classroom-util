@@ -178,16 +178,9 @@ export function SenderPage() {
   const handleSendClick = () => {
     const text = customText.trim();
     if (!text || !isConnected) return;
-    if (text.includes('{name}')) {
-      setPendingTemplate(text);
-      setStudentPickerMode('send');
-      setStudentSearchQuery('');
-      setShowStudentPicker(true);
-    } else {
-      setPinInput('');
-      setPinError('');
-      setShowTemplateConfirm(true);
-    }
+    setPinInput('');
+    setPinError('');
+    setShowTemplateConfirm(true);
   };
 
   const handleTemplateClick = (template: string) => {
@@ -215,15 +208,14 @@ export function SenderPage() {
         const end = ta.selectionEnd;
         const before = customText.slice(0, start);
         const after = customText.slice(end);
-        const newText = before + '{name}' + after;
+        const newText = before + name + after;
         setCustomText(newText);
-        // Restore cursor after the inserted text
         requestAnimationFrame(() => {
           ta.focus();
-          ta.selectionStart = ta.selectionEnd = start + '{name}'.length;
+          ta.selectionStart = ta.selectionEnd = start + name.length;
         });
       } else {
-        setCustomText(customText + '{name}');
+        setCustomText(customText + name);
       }
       setShowStudentPicker(false);
       setStudentSearchQuery('');
@@ -234,7 +226,6 @@ export function SenderPage() {
       setShowStudentPicker(false);
       setStudentSearchQuery('');
       setPendingTemplate(null);
-      // Auto-open confirm
       setPinInput('');
       setPinError('');
       setShowTemplateConfirm(true);
@@ -279,10 +270,19 @@ export function SenderPage() {
     }
   };
 
+
   const handleSaveTemplate = () => {
     const text = customText.trim();
     if (!text) return;
-    const next = [...savedTemplates, text];
+    // Replace any student name in the text with {name}
+    let template = text;
+    const sorted = [...students].sort((a, b) => b.length - a.length);
+    for (const s of sorted) {
+      if (template.includes(s)) {
+        template = template.replace(new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '{name}');
+      }
+    }
+    const next = [...savedTemplates, template];
     setSavedTemplates(next);
     saveSavedTemplates(next);
     setToast({ msg: '已保存模板' });
@@ -294,7 +294,6 @@ export function SenderPage() {
     saveSavedTemplates(next);
   };
 
-  // ── Sudo flow ──
   const refreshPinInfo = async () => {
     setPinSet((await getPinStatus()) === 'set');
     if (sudoAuthed) {
@@ -821,7 +820,7 @@ export function SenderPage() {
               <textarea
                 ref={textareaRef}
                 className="custom-textarea"
-                placeholder="输入自定义消息内容... (使用 {name} 代表学生姓名)"
+                placeholder="输入自定义消息内容... (点击下方按钮插入学生姓名)"
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
                 onKeyDown={handleCustomKeyDown}
