@@ -1,5 +1,17 @@
 # Changelog
 
+
+## v1.5.1 (2026-06-24)
+
+### 🔧 修复
+
+- **Electron 作业窗口无法打开**：添加 `createHomeworkWindow` 及 IPC handler，preload 暴露 `openHomeworkWindow`/`closeHomeworkWindow`/`onHomeworkWindowClosed`，修复所有导向另一个 HTML 文件的弹窗在 Electron 中无法显示的问题。（[#16](https://github.com/InklingYoshi584/classroom-util/issues/16)）
+- **作业统计日期错误**：`getWeekDates` 从 `toISOString()`（UTC）改为本地日期格式化，修复时区导致的「周日到周四」显示问题。（[#14](https://github.com/InklingYoshi584/classroom-util/issues/14)）
+
+### ✨ 改进
+
+- **星期筛选器**：作业追踪页面新增星期筛选 chips（默认周一至周五），可自由勾选显示的工作日。数据始终全量保存，筛选仅影响客户端显示与导航。（[#14](https://github.com/InklingYoshi584/classroom-util/issues/14)）
+
 ## v1.5.0 (2026-06-23)
 
 ### 🎉 新功能
