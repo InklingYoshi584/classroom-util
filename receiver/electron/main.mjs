@@ -42,6 +42,9 @@ function saveConfig(config) {
 
 // ── Timer window state ──
 let timerWindow = null;
+// ── Homework window state ──
+let homeworkWindow = null;
+
 let powerSaveBlockerId = null;
 
 // ── IPC handlers ──
@@ -138,6 +141,48 @@ ipcMain.handle('open-timer-window', () => {
 ipcMain.handle('close-timer-window', () => {
   if (timerWindow && !timerWindow.isDestroyed()) {
     timerWindow.close();
+  }
+  return { ok: true };
+});
+
+function createHomeworkWindow(classId, serverHost) {
+  if (homeworkWindow && !homeworkWindow.isDestroyed()) {
+    homeworkWindow.focus();
+    return;
+  }
+  homeworkWindow = new BrowserWindow({
+    width: 900,
+    height: 700,
+    minWidth: 600,
+    minHeight: 500,
+    autoHideMenuBar: true,
+    title: '作业追踪',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.mjs'),
+    },
+  });
+  homeworkWindow.loadFile(path.join(__dirname, '..', 'dist', 'homework.html'), {
+    query: { classId, serverHost },
+  });
+  homeworkWindow.center();
+
+  homeworkWindow.on('closed', () => {
+    homeworkWindow = null;
+    const mainWin = BrowserWindow.getAllWindows().find(w => !w.isDestroyed() && w !== homeworkWindow);
+    if (mainWin) mainWin.webContents.send('homework-window-closed');
+  });
+}
+
+ipcMain.handle('open-homework-window', (_event, classId, serverHost) => {
+  createHomeworkWindow(classId, serverHost);
+  return { ok: true };
+});
+
+ipcMain.handle('close-homework-window', () => {
+  if (homeworkWindow && !homeworkWindow.isDestroyed()) {
+    homeworkWindow.close();
   }
   return { ok: true };
 });

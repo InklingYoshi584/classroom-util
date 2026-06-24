@@ -61,6 +61,41 @@
   border-color: var(--primary);
 }
 
+/* ── Weekday filter ── */
+.hw-weekday-filter {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.hw-weekday-chip {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.hw-weekday-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.hw-weekday-chip.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
 /* ── Toolbar ── */
 .hw-toolbar {
   display: flex;

@@ -18,19 +18,31 @@ const STATUS_LABELS: Record<HomeworkStatus, string> = {
 
 const STATUS_CYCLE: HomeworkStatus[] = ['not-submitted', 'submitted', 'leave'];
 
-function getWeekDates(offset = 0) {
+function toLocalDateString(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function getWeekDates(offset = 0, selectedDays: number[] = [1, 2, 3, 4, 5]) {
   const now = new Date();
   const day = now.getDay();
   const monday = new Date(now);
   monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+
+  const sorted = [...selectedDays].sort((a, b) => a - b);
   const dates: string[] = [];
-  for (let i = 0; i < 5; i++) {
+  for (const dayIdx of sorted) {
     const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    dates.push(d.toISOString().slice(0, 10));
+    // Mon(1)=0, Tue(2)=1, ..., Sat(6)=5, Sun(0)=6
+    d.setDate(monday.getDate() + (dayIdx === 0 ? 6 : dayIdx - 1));
+    dates.push(toLocalDateString(d));
   }
   return dates;
 }
+
+const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
 
 function formatDisplayDate(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00');
@@ -41,8 +53,11 @@ function formatDisplayDate(dateStr: string) {
 export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSaved }: Props) {
   const [students, setStudents] = useState<string[]>([]);
   const [allData, setAllData] = useState<Record<string, HomeworkDayData>>({});
-  const [currentDate, setCurrentDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [currentDate, setCurrentDate] = useState(() => toLocalDateString(new Date()));
+  const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [weekOffset, setWeekOffset] = useState(0);
+
+
   const [dataChanged, setDataChanged] = useState(false);
   const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
 
@@ -386,9 +401,30 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
   };
 
   // ── Week nav ──
-  const weekDates = getWeekDates(weekOffset);
+  const weekDates = getWeekDates(weekOffset, selectedWeekdays);
+
 
   const isCurrentDateValid = weekDates.includes(currentDate);
+
+  // If current date falls outside selected weekdays, pick first available
+  useEffect(() => {
+    if (weekDates.length > 0 && !weekDates.includes(currentDate)) {
+      setCurrentDate(weekDates[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedWeekdays, weekOffset]);
+
+  const handleToggleWeekday = (dayIdx: number) => {
+    setSelectedWeekdays((prev) => {
+      if (prev.includes(dayIdx)) {
+        if (prev.length <= 1) return prev; // keep at least one
+        return prev.filter((d) => d !== dayIdx);
+      }
+      const next = [...prev, dayIdx].sort((a, b) => a - b);
+      return next;
+    });
+  };
+
 
   return (
     <div className="hw-tracker">
@@ -405,6 +441,19 @@ export function HomeworkTracker({ classId, serverHost, reloadTrigger, onDataSave
         ))}
         <button className="hw-week-btn" onClick={() => setWeekOffset((w) => w + 1)}>&#9654;</button>
       </div>
+      <div className="hw-weekday-filter">
+        {[0, 1, 2, 3, 4, 5, 6].map((d) => (
+          <button
+            key={d}
+            className={`hw-weekday-chip ${selectedWeekdays.includes(d) ? 'active' : ''}`}
+            onClick={() => handleToggleWeekday(d)}
+            title={['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d]}
+          >
+            {WEEKDAY_LABELS[d]}
+          </button>
+        ))}
+      </div>
+
 
       <div className="hw-toolbar">
         {adminUnlocked ? (
