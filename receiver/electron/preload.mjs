@@ -17,4 +17,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onHomeworkWindowClosed: (callback) => {
     ipcRenderer.on('homework-window-closed', () => callback());
   },
+  capturePage: () => ipcRenderer.invoke('capture-page'),
+  saveScreenshot: (dataUrl) => ipcRenderer.invoke('save-screenshot', dataUrl),
 });

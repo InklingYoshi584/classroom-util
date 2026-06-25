@@ -191,6 +191,37 @@ ipcMain.handle('load-receiver-config', () => loadConfig());
 
 ipcMain.handle('save-receiver-config', (_event, config) => saveConfig(config));
 
+// ── Whiteboard IPC ──
+function formatTimestamp() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+}
+
+ipcMain.handle('capture-page', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return { ok: false, error: 'No window found' };
+  try {
+    const image = await win.webContents.capturePage();
+    return { ok: true, dataUrl: image.toDataURL() };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('save-screenshot', async (_event, dataUrl) => {
+  try {
+    const desktopPath = app.getPath('desktop');
+    const filename = `白板批注_${formatTimestamp()}.png`;
+    const fullPath = path.join(desktopPath, filename);
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+    fs.writeFileSync(fullPath, Buffer.from(base64, 'base64'));
+    return { ok: true, path: fullPath };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1024,

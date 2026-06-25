@@ -16,6 +16,8 @@ interface ElectronHomeworkAPI {
   openHomeworkWindow: (classId: string, serverHost: string) => Promise<{ ok: boolean }>;
   closeHomeworkWindow: () => Promise<{ ok: boolean }>;
   onHomeworkWindowClosed: (callback: () => void) => void;
+  capturePage: () => Promise<{ ok: boolean; dataUrl?: string; error?: string }>;
+  saveScreenshot: (dataUrl: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
 }
 
 declare global {
@@ -96,6 +98,23 @@ export const electronApi: ElectronHomeworkAPI = {
     if (window.electronAPI) {
       window.electronAPI.onHomeworkWindowClosed(callback);
     }
+  },
+  async capturePage() {
+    if (window.electronAPI) return window.electronAPI.capturePage();
+    const canvas = document.createElement('canvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.getContext('2d')!.fillStyle = '#f0f2f5';
+    canvas.getContext('2d')!.fillRect(0, 0, canvas.width, canvas.height);
+    return { ok: true, dataUrl: canvas.toDataURL('image/png') };
+  },
+  async saveScreenshot(dataUrl: string) {
+    if (window.electronAPI) return window.electronAPI.saveScreenshot(dataUrl);
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `白板批注_${Date.now()}.png`;
+    a.click();
+    return { ok: true };
   },
 };
 

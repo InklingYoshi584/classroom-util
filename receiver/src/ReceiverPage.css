@@ -1103,3 +1103,18 @@
   font-size: 1.05rem;
   font-weight: 700;
 }
+
+/* ── Whiteboard button ── */
+.whiteboard-btn {
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+.whiteboard-btn:hover {
+  background: var(--primary-dark);
+}
+.whiteboard-btn:active {
+  transform: scale(0.96);
+}
