@@ -6,7 +6,6 @@ import { ttsEngine } from './lib/tts';
 import { getPinStatus, verifyPin } from './lib/pin';
 import { HomeworkTracker } from './HomeworkTracker';
 import { electronApi } from './lib/electronApi';
-import { WhiteboardApp } from './WhiteboardApp';
 import './ReceiverPage.css';
 
 export function ReceiverPage() {
@@ -32,7 +31,6 @@ export function ReceiverPage() {
   const [receiverNickname, setReceiverNickname] = useState(() => localStorage.getItem('classroom-receiver-nickname') || '');
   const [timerWindowOpen, setTimerWindowOpen] = useState(false);
   const [showConnectOverlay, setShowConnectOverlay] = useState(true);
-  const [whiteboardOpen, setWhiteboardOpen] = useState(false);
 
   const popupTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const scheduleActiveRef = useRef(false);
@@ -393,7 +391,7 @@ export function ReceiverPage() {
             <button className="homework-btn" onClick={() => electronApi.openHomeworkWindow(classIdTrimmed, serverHost.trim())}>
               作业
             </button>
-            <button className="whiteboard-btn" onClick={() => setWhiteboardOpen(true)}>
+            <button className="whiteboard-btn" onClick={() => electronApi.openWhiteboard()}>
               白板
             </button>
           </div>
@@ -628,7 +626,6 @@ export function ReceiverPage() {
           </div>
         </div>
       )}
-      <WhiteboardApp open={whiteboardOpen} onClose={() => setWhiteboardOpen(false)} />
     </div>
   );
 }

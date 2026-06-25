@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, powerSaveBlocker } from 'electron';
+import { app, BrowserWindow, desktopCapturer, ipcMain, powerSaveBlocker, screen } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -44,6 +44,10 @@ function saveConfig(config) {
 let timerWindow = null;
 // ── Homework window state ──
 let homeworkWindow = null;
+
+// ── Whiteboard window state ──
+let whiteboardBtnWin = null;
+let whiteboardWin = null;
 
 let powerSaveBlockerId = null;
 
@@ -191,6 +195,69 @@ ipcMain.handle('load-receiver-config', () => loadConfig());
 
 ipcMain.handle('save-receiver-config', (_event, config) => saveConfig(config));
 
+
+// ── Whiteboard window management ──
+function createWhiteboardBtnWindow() {
+  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) {
+    whiteboardBtnWin.show();
+    return;
+  }
+  const { workArea } = screen.getPrimaryDisplay();
+  const btnW = 130, btnH = 44;
+  whiteboardBtnWin = new BrowserWindow({
+    x: workArea.x + workArea.width - btnW - 16,
+    y: workArea.y + workArea.height - btnH - 16,
+    width: btnW,
+    height: btnH,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    skipTaskbar: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'whiteboard-preload.mjs'),
+    },
+  });
+  whiteboardBtnWin.loadFile(path.join(__dirname, '..', 'dist', 'whiteboard.html'), {
+    query: { role: 'button' },
+  });
+  whiteboardBtnWin.on('closed', () => { whiteboardBtnWin = null; });
+}
+
+function createWhiteboardOverlayWindow() {
+  if (whiteboardWin && !whiteboardWin.isDestroyed()) {
+    whiteboardWin.show();
+    return;
+  }
+  const { bounds } = screen.getPrimaryDisplay();
+  whiteboardWin = new BrowserWindow({
+    x: bounds.x,
+    y: bounds.y,
+    width: bounds.width,
+    height: bounds.height,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    skipTaskbar: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'whiteboard-preload.mjs'),
+    },
+  });
+  whiteboardWin.loadFile(path.join(__dirname, '..', 'dist', 'whiteboard.html'), {
+    query: { role: 'overlay' },
+  });
+  whiteboardWin.on('closed', () => { whiteboardWin = null; });
+
+  whiteboardWin.webContents.session.setPermissionRequestHandler((_webContents, permission, callback) => {
+    if (permission === 'media') callback(true);
+    else callback(false);
+  });
+}
 // ── Whiteboard IPC ──
 function formatTimestamp() {
   const now = new Date();
@@ -198,15 +265,34 @@ function formatTimestamp() {
   return `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 }
 
-ipcMain.handle('capture-page', async (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (!win) return { ok: false, error: 'No window found' };
+ipcMain.handle('capture-screen', async () => {
   try {
-    const image = await win.webContents.capturePage();
-    return { ok: true, dataUrl: image.toDataURL() };
+    const sources = await desktopCapturer.getSources({ types: ['screen'] });
+    if (sources.length === 0) return { ok: false, error: 'No screen sources' };
+    return { ok: true, sourceId: sources[0].id };
   } catch (e) {
     return { ok: false, error: e.message };
   }
+});
+
+ipcMain.on('show-whiteboard-button', () => {
+  createWhiteboardBtnWindow();
+});
+
+ipcMain.on('hide-whiteboard-button', () => {
+  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.hide();
+});
+
+ipcMain.handle('open-whiteboard-overlay', () => {
+  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.hide();
+  createWhiteboardOverlayWindow();
+  return { ok: true };
+});
+
+ipcMain.handle('close-whiteboard-overlay', () => {
+  if (whiteboardWin && !whiteboardWin.isDestroyed()) whiteboardWin.hide();
+  createWhiteboardBtnWindow();
+  return { ok: true };
 });
 
 ipcMain.handle('save-screenshot', async (_event, dataUrl) => {
@@ -240,8 +326,10 @@ function createWindow() {
   win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => { createWindow(); createWhiteboardBtnWindow(); });
 
 app.on('window-all-closed', () => {
+  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.destroy();
+  if (whiteboardWin && !whiteboardWin.isDestroyed()) whiteboardWin.destroy();
   app.quit();
 });

@@ -19,4 +19,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   capturePage: () => ipcRenderer.invoke('capture-page'),
   saveScreenshot: (dataUrl) => ipcRenderer.invoke('save-screenshot', dataUrl),
+  openWhiteboard: () => ipcRenderer.invoke('open-whiteboard-overlay'),
 });

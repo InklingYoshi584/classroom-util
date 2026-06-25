@@ -16,6 +16,7 @@ interface ElectronHomeworkAPI {
   openHomeworkWindow: (classId: string, serverHost: string) => Promise<{ ok: boolean }>;
   closeHomeworkWindow: () => Promise<{ ok: boolean }>;
   onHomeworkWindowClosed: (callback: () => void) => void;
+  openWhiteboard: () => Promise<{ ok: boolean }>;
   capturePage: () => Promise<{ ok: boolean; dataUrl?: string; error?: string }>;
   saveScreenshot: (dataUrl: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
 }
@@ -115,6 +116,10 @@ export const electronApi: ElectronHomeworkAPI = {
     a.download = `白板批注_${Date.now()}.png`;
     a.click();
     return { ok: true };
+  },
+  async openWhiteboard() {
+    if (window.electronAPI) return window.electronAPI.openWhiteboard();
+    return { ok: false, error: 'Not running in Electron' };
   },
 };
 
