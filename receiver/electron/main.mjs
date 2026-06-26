@@ -290,7 +290,7 @@ ipcMain.on('whiteboard-set-ignore-mouse', (_event, ignore) => {
 });
 
 ipcMain.on('show-whiteboard-button', () => {
-  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.setOpacity(1);
+  createWhiteboardBtnWindow();
 });
 
 ipcMain.on('hide-whiteboard-button', () => {
