@@ -30,7 +30,6 @@
     -webkit-app-region: drag;
   }
   #openBtn {
-    -webkit-app-region: no-drag;
     height: 36px;
     padding: 0 14px;
     border: none;
@@ -242,13 +241,20 @@
   if (ROLE === 'button') {
     document.body.classList.add('btn-mode');
     document.getElementById('btnContainer').style.display = 'flex';
-    document.getElementById('openBtn').onclick = () => {
-      if (window.electronAPI) window.electronAPI.openWhiteboard();
-    };
-    document.getElementById('openBtn').oncontextmenu = (e) => {
+    var btn = document.getElementById('openBtn');
+    var startX = 0, startY = 0;
+    btn.addEventListener('mousedown', function(e) {
+      startX = e.screenX; startY = e.screenY;
+    });
+    btn.addEventListener('mouseup', function(e) {
+      if (Math.abs(e.screenX - startX) < 5 && Math.abs(e.screenY - startY) < 5) {
+        if (e.button === 0 && window.electronAPI) window.electronAPI.openWhiteboard();
+      }
+    });
+    btn.addEventListener('contextmenu', function(e) {
       e.preventDefault();
       if (window.electronAPI) window.electronAPI.closeButton();
-    };
+    });
     return;
   }
 

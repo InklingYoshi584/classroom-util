@@ -229,6 +229,16 @@ function createWhiteboardBtnWindow() {
     query: { role: 'button' },
   });
   whiteboardBtnWin.on('closed', () => { whiteboardBtnWin = null; });
+  whiteboardBtnWin.on('will-move', (_e, bounds) => clampToScreen(bounds));
+  whiteboardBtnWin.on('will-resize', (_e, bounds) => clampToScreen(bounds));
+}
+
+function clampToScreen(bounds) {
+  var wa = screen.getPrimaryDisplay().workArea;
+  if (bounds.x < wa.x) bounds.x = wa.x;
+  if (bounds.y < wa.y) bounds.y = wa.y;
+  if (bounds.x + bounds.width > wa.x + wa.width) bounds.x = wa.x + wa.width - bounds.width;
+  if (bounds.y + bounds.height > wa.y + wa.height) bounds.y = wa.y + wa.height - bounds.height;
 }
 
 function createWhiteboardOverlayWindow() {
@@ -258,6 +268,7 @@ function createWhiteboardOverlayWindow() {
     query: { role: 'overlay' },
   });
   whiteboardWin.on('closed', () => { whiteboardWin = null; });
+  whiteboardWin.on('will-move', (_e, bounds) => clampToScreen(bounds));
   whiteboardWin.webContents.session.setPermissionRequestHandler((_wc, permission, cb) => {
     cb(permission === 'media');
   });
