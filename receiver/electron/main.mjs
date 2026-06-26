@@ -291,10 +291,24 @@ ipcMain.on('show-whiteboard-button', () => {
 ipcMain.on('hide-whiteboard-button', () => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.hide();
 });
+ipcMain.on('whiteboard-btn-position', (_event, side) => {
+  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) {
+    var wa = screen.getPrimaryDisplay().workArea;
+    if (side === 'left') {
+      whiteboardBtnWin.setPosition(16, wa.y + wa.height - 44 - 16);
+    } else {
+      whiteboardBtnWin.setPosition(wa.x + wa.width - 130 - 16, wa.y + wa.height - 44 - 16);
+    }
+  }
+});
 ipcMain.handle('open-whiteboard-overlay', async () => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.hide();
   createWhiteboardOverlayWindow();
   if (whiteboardWin && !whiteboardWin.isDestroyed()) {
+    whiteboardBtnWin && !whiteboardBtnWin.isDestroyed() && whiteboardBtnWin.setPosition(
+      screen.getPrimaryDisplay().workArea.x + screen.getPrimaryDisplay().workArea.width - 130 - 16,
+      screen.getPrimaryDisplay().workArea.y + screen.getPrimaryDisplay().workArea.height - 44 - 16
+    );
     whiteboardWin.setIgnoreMouseEvents(false);
     whiteboardWin.webContents.send('exit-select-mode');
   }

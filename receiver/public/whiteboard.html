@@ -245,15 +245,6 @@
     document.body.classList.add('overlay-mode');
     var overlayContainer = document.getElementById('overlayContainer');
     overlayContainer.style.display = 'block';
-
-  if (window.electronAPI && window.electronAPI.onExitSelectMode) {
-    window.electronAPI.onExitSelectMode(function() {
-      if (toolMode === 'select') {
-        toolMode = 'pen';
-        updateToolbarUI();
-      }
-    });
-  }
   } else {
     return;
   }
@@ -533,10 +524,8 @@
     e.stopPropagation();
     penPanelVisible = false;
     eraserPanelVisible = false;
+    toolMode = 'select';
     updateToolbarUI();
-    // Hide overlay, show button — clicks pass through to desktop
-    window.electronAPI.showButton();
-    window.electronAPI.closeWhiteboard();
   });
 
   lockBtn.addEventListener('click', function(e) {
