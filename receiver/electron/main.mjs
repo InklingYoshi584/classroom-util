@@ -315,10 +315,12 @@ ipcMain.on('whiteboard-move-window', (_event, dx, dy) => {
     var nx = pos[0] + dx, ny = pos[1] + dy;
     var wa = screen.getPrimaryDisplay().workArea;
     var size = win.getSize();
-    if (nx < wa.x) nx = wa.x;
-    if (ny < wa.y) ny = wa.y;
-    if (nx + size[0] > wa.x + wa.width) nx = wa.x + wa.width - size[0];
-    if (ny + size[1] > wa.y + wa.height) ny = wa.y + wa.height - size[1];
+    if (size[0] < wa.width || size[1] < wa.height) {
+      if (nx < wa.x) nx = wa.x;
+      if (ny < wa.y) ny = wa.y;
+      if (nx + size[0] > wa.x + wa.width) nx = wa.x + wa.width - size[0];
+      if (ny + size[1] > wa.y + wa.height) ny = wa.y + wa.height - size[1];
+    }
     win.setPosition(Math.round(nx), Math.round(ny));
   }
 });
@@ -328,10 +330,12 @@ ipcMain.on('whiteboard-move-to', (_event, x, y) => {
   if (win && !win.isDestroyed()) {
     var wa = screen.getPrimaryDisplay().workArea;
     var size = win.getSize();
-    if (x < wa.x) x = wa.x;
-    if (y < wa.y) y = wa.y;
-    if (x + size[0] > wa.x + wa.width) x = wa.x + wa.width - size[0];
-    if (y + size[1] > wa.y + wa.height) y = wa.y + wa.height - size[1];
+    if (size[0] < wa.width || size[1] < wa.height) {
+      if (x < wa.x) x = wa.x;
+      if (y < wa.y) y = wa.y;
+      if (x + size[0] > wa.x + wa.width) x = wa.x + wa.width - size[0];
+      if (y + size[1] > wa.y + wa.height) y = wa.y + wa.height - size[1];
+    }
     win.setPosition(Math.round(x), Math.round(y));
   }
 });
