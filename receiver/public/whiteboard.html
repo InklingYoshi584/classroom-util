@@ -239,10 +239,12 @@
     document.getElementById('btnContainer').style.display = 'flex';
     var btnEl = document.getElementById('openBtn');
     var dsx = 0, dsy = 0, dragging = false, dragTimer = null, tracking = false;
+    var winX = 0, winY = 0;
     function startDrag() { dragging = true; }
     document.body.addEventListener('mousedown', function(e) {
       if (e.button !== 0) return;
       dsx = e.screenX; dsy = e.screenY;
+      winX = e.screenX; winY = e.screenY;
       tracking = true;
       dragging = false;
       dragTimer = setTimeout(startDrag, 300);
@@ -254,8 +256,9 @@
         dragging = true;
       }
       if (dragging) {
-        if (window.electronAPI) window.electronAPI.moveWindow(e.screenX - dsx, e.screenY - dsy);
+        winX += e.screenX - dsx; winY += e.screenY - dsy;
         dsx = e.screenX; dsy = e.screenY;
+        if (window.electronAPI) window.electronAPI.moveTo(winX, winY);
       }
     });
     window.addEventListener('mouseup', function(e) {
@@ -320,9 +323,11 @@
   // ── Toolbar window drag (long-press = drag, short = click) ──
   var tb = document.getElementById('toolbar');
   var tdsx = 0, tdsy = 0, tdragging = false, tdtimer = null, ttracking = false;
+  var twinX = 0, twinY = 0;
   tb.addEventListener('mousedown', function(e) {
     if (e.button !== 0) return;
     tdsx = e.screenX; tdsy = e.screenY;
+    twinX = e.screenX; twinY = e.screenY;
     ttracking = true; tdragging = false;
     tdtimer = setTimeout(function() { tdragging = true; }, 300);
   });
@@ -332,8 +337,9 @@
       clearTimeout(tdtimer); tdragging = true;
     }
     if (tdragging && window.electronAPI) {
-      window.electronAPI.moveWindow(e.screenX - tdsx, e.screenY - tdsy);
+      twinX += e.screenX - tdsx; twinY += e.screenY - tdsy;
       tdsx = e.screenX; tdsy = e.screenY;
+      window.electronAPI.moveTo(twinX, twinY);
     }
   });
   window.addEventListener('mouseup', function(e) {
