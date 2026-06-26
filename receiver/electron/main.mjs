@@ -219,6 +219,7 @@ function createWhiteboardBtnWindow() {
     alwaysOnTop: true,
     resizable: false,
     skipTaskbar: true,
+    show: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -365,7 +366,7 @@ function createWindow() {
   mainWindow = win;
 }
 
-app.whenReady().then(() => { createWindow(); createWhiteboardBtnWindow(); if (whiteboardBtnWin) whiteboardBtnWin.hide(); });
+app.whenReady().then(() => { createWindow(); createWhiteboardBtnWindow(); });
 
 app.on('window-all-closed', () => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.destroy();
