@@ -81,19 +81,23 @@
     z-index: 10;
   }
   .tool-btn {
-    width: 40px; height: 40px;
+    width: 56px; height: 56px;
     border: none;
     border-radius: 10px;
     background: transparent;
     color: rgba(255,255,255,0.8);
-    font-size: 18px;
+    font-size: 13px;
     cursor: pointer;
     transition: background 0.12s, color 0.12s;
     display: flex;
+    flex-direction: column;
+    gap: 2px;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
   }
+  .tool-btn .icon { font-size: 20px; line-height: 1; }
+  .tool-btn .label { font-size: 10px; line-height: 1; opacity: 0.7; }
   .tool-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
   .tool-btn.active { background: rgba(59, 130, 246, 0.5); color: #fff; }
   .tool-btn:disabled { opacity: 0.4; cursor: default; }
@@ -200,12 +204,12 @@
 <div id="overlayContainer">
   <canvas id="mainCanvas"></canvas>
   <div id="toolbar">
-    <button id="penBtn" class="tool-btn" title="画笔">✏️</button>
-    <button id="eraserBtn" class="tool-btn" title="擦除">🧹</button>
-    <button id="selectBtn" class="tool-btn" title="选择模式（穿透点击）">👆</button>
-    <button id="lockBtn" class="tool-btn" title="锁定背景">🔒</button>
-    <button id="saveBtn" class="tool-btn" title="保存到桌面">💾</button>
-    <button id="closeBtn" class="tool-btn" title="关闭">✕</button>
+    <button id="penBtn" class="tool-btn" title="画笔"><span class="icon">✏️</span><span class="label">画笔</span></button>
+    <button id="eraserBtn" class="tool-btn" title="擦除"><span class="icon">🧹</span><span class="label">擦除</span></button>
+    <button id="selectBtn" class="tool-btn" title="选择"><span class="icon">👆</span><span class="label">选择</span></button>
+    <button id="lockBtn" class="tool-btn" title="锁定背景"><span class="icon">🔒</span><span class="label">锁定</span></button>
+    <button id="saveBtn" class="tool-btn" title="保存到桌面"><span class="icon">💾</span><span class="label">保存</span></button>
+    <button id="closeBtn" class="tool-btn" title="关闭并清除"><span class="icon">✕</span><span class="label">关闭</span></button>
 
     <!-- Pen settings panel -->
     <div id="penPanel">
@@ -366,6 +370,8 @@
     clearDragging = false;
     if (clearProgress >= 0.95) {
       strokesCtx.clearRect(0, 0, strokesCanvas.width, strokesCanvas.height);
+      eraserPanelVisible = false;
+      updateToolbarUI();
     }
     clearProgress = 0;
     updateClearUI();
@@ -551,6 +557,7 @@
 
   closeBtn.addEventListener('click', function(e) {
     e.stopPropagation();
+    strokesCtx.clearRect(0, 0, strokesCanvas.width, strokesCanvas.height);
     window.electronAPI.closeWhiteboard();
   });
 
