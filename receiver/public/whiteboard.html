@@ -328,8 +328,9 @@
   var tb = document.getElementById('toolbar');
   var tdsx = 0, tdsy = 0, tdragging = false, tdtimer = null, ttracking = false;
   var twinX = 0, twinY = 0;
-  tb.addEventListener('mousedown', async function(e) {
+  document.addEventListener('mousedown', async function(e) {
     if (e.button !== 0) return;
+    if (!e.target.closest('#toolbar')) return;
     tdsx = e.screenX; tdsy = e.screenY;
     twinX = e.screenX; twinY = e.screenY;
     if (window.electronAPI) {
@@ -634,10 +635,6 @@
   });
 
   // Stop toolbar events from reaching canvas
-  document.getElementById('toolbar').addEventListener('mousedown', function(e) {
-    e.stopPropagation();
-  });
-
   // ── Rendering loop ──
   function render() {
     var w = mainCanvas.width, h = mainCanvas.height;
