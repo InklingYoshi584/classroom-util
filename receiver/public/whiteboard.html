@@ -240,30 +240,31 @@
     document.body.classList.add('btn-mode');
     document.getElementById('btnContainer').style.display = 'flex';
     var btnEl = document.getElementById('openBtn');
-    var dragStartX = 0, dragStartY = 0, winStartX = 0, winStartY = 0, dragging = false;
-    var onMouseDown = function(e) {
+    var dsx = 0, dsy = 0, dragging = false, dragTimer = null, tracking = false;
+    function startDrag() { dragging = true; }
+    document.body.addEventListener('mousedown', function(e) {
       if (e.button !== 0) return;
-      dragStartX = e.screenX; dragStartY = e.screenY;
+      dsx = e.screenX; dsy = e.screenY;
+      tracking = true;
       dragging = false;
-    };
-    document.body.addEventListener('mousedown', onMouseDown);
+      dragTimer = setTimeout(startDrag, 300);
+    });
     window.addEventListener('mousemove', function(e) {
-      if (dragStartX === 0 && dragStartY === 0) return;
-      if (dragging) {
-        if (window.electronAPI) window.electronAPI.moveWindow(e.screenX - dragStartX, e.screenY - dragStartY);
-        dragStartX = e.screenX; dragStartY = e.screenY;
-        return;
-      }
-      if (Math.abs(e.screenX - dragStartX) > 3 || Math.abs(e.screenY - dragStartY) > 3) {
+      if (!tracking) return;
+      if (Math.abs(e.screenX - dsx) > 3 || Math.abs(e.screenY - dsy) > 3) {
+        clearTimeout(dragTimer);
         dragging = true;
+      }
+      if (dragging) {
+        if (window.electronAPI) window.electronAPI.moveWindow(e.screenX - dsx, e.screenY - dsy);
+        dsx = e.screenX; dsy = e.screenY;
       }
     });
     window.addEventListener('mouseup', function(e) {
       if (e.button !== 0) return;
-      if (!dragging && dragStartX !== 0) {
-        window.electronAPI && window.electronAPI.openWhiteboard();
-      }
-      dragStartX = 0; dragStartY = 0; dragging = false;
+      clearTimeout(dragTimer);
+      if (!dragging && tracking) { window.electronAPI && window.electronAPI.openWhiteboard(); }
+      tracking = false; dragging = false;
     });
     btnEl.addEventListener('contextmenu', function(e) {
       e.preventDefault();
