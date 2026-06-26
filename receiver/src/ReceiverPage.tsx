@@ -391,7 +391,14 @@ export function ReceiverPage() {
             <button className="homework-btn" onClick={() => electronApi.openHomeworkWindow(classIdTrimmed, serverHost.trim())}>
               作业
             </button>
-            <button className="whiteboard-btn" onClick={() => electronApi.openWhiteboard()}>
+            <button className="whiteboard-btn" onClick={async (e) => {
+              const btn = e.currentTarget as HTMLButtonElement;
+              const orig = btn.textContent;
+              btn.textContent = '…';
+              const r = await electronApi.openWhiteboard();
+              btn.textContent = r.ok ? 'OK' : '✗';
+              setTimeout(() => { btn.textContent = orig; }, 2000);
+            }}>
               白板
             </button>
           </div>

@@ -204,7 +204,7 @@ ipcMain.handle('save-receiver-config', (_event, config) => saveConfig(config));
 // ── Whiteboard window management ──
 function createWhiteboardBtnWindow() {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) {
-    whiteboardBtnWin.show();
+    whiteboardBtnWin.setOpacity(1);
     return;
   }
   const { workArea } = screen.getPrimaryDisplay();
@@ -219,7 +219,6 @@ function createWhiteboardBtnWindow() {
     alwaysOnTop: true,
     resizable: false,
     skipTaskbar: true,
-    show: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -228,6 +227,9 @@ function createWhiteboardBtnWindow() {
   });
   whiteboardBtnWin.loadFile(path.join(__dirname, '..', 'dist', 'whiteboard.html'), {
     query: { role: 'button' },
+  });
+  whiteboardBtnWin.webContents.on('did-finish-load', () => {
+    whiteboardBtnWin.setOpacity(0);
   });
   whiteboardBtnWin.on('closed', () => { whiteboardBtnWin = null; });
 }
@@ -291,11 +293,11 @@ ipcMain.on('whiteboard-set-ignore-mouse', (_event, ignore) => {
 });
 
 ipcMain.on('show-whiteboard-button', () => {
-  createWhiteboardBtnWindow();
+  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.setOpacity(1);
 });
 
 ipcMain.on('hide-whiteboard-button', () => {
-  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.hide();
+  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.setOpacity(0);
 });
 ipcMain.on('whiteboard-btn-position', (_event, side) => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) {
@@ -308,7 +310,7 @@ ipcMain.on('whiteboard-btn-position', (_event, side) => {
   }
 });
 ipcMain.handle('open-whiteboard-overlay', async () => {
-  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.hide();
+  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.setOpacity(0);
   createWhiteboardOverlayWindow();
   if (whiteboardWin && !whiteboardWin.isDestroyed()) {
     whiteboardBtnWin && !whiteboardBtnWin.isDestroyed() && whiteboardBtnWin.setPosition(
@@ -366,7 +368,10 @@ function createWindow() {
   mainWindow = win;
 }
 
-app.whenReady().then(() => { createWindow(); createWhiteboardBtnWindow(); });
+app.whenReady().then(() => {
+  createWindow();
+  createWhiteboardBtnWindow();
+});
 
 app.on('window-all-closed', () => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.destroy();
