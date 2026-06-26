@@ -508,11 +508,6 @@
   // ── Toolbar button events ──
   penBtn.addEventListener('click', function(e) {
     e.stopPropagation();
-    // Exit select mode if active
-    if (toolMode === 'select') {
-      window.electronAPI.setIgnoreMouseEvents(false);
-      window.electronAPI.hideButton();
-    }
     if (toolMode === 'pen') {
       penPanelVisible = !penPanelVisible;
     } else {
@@ -525,10 +520,6 @@
 
   eraserBtn.addEventListener('click', function(e) {
     e.stopPropagation();
-    if (toolMode === 'select') {
-      window.electronAPI.setIgnoreMouseEvents(false);
-      window.electronAPI.hideButton();
-    }
     if (toolMode === 'eraser') {
       eraserPanelVisible = !eraserPanelVisible;
     } else {
@@ -542,11 +533,10 @@
     e.stopPropagation();
     penPanelVisible = false;
     eraserPanelVisible = false;
-    toolMode = 'select';
     updateToolbarUI();
-    // Forward clicks through to desktop, keep overlay visible
-    window.electronAPI.setIgnoreMouseEvents(true);
+    // Hide overlay, show button — clicks pass through to desktop
     window.electronAPI.showButton();
+    window.electronAPI.closeWhiteboard();
   });
 
   lockBtn.addEventListener('click', function(e) {
