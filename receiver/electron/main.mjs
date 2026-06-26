@@ -236,12 +236,12 @@ function createWhiteboardOverlayWindow() {
     whiteboardWin.show();
     return;
   }
-  const { bounds } = screen.getPrimaryDisplay();
+  const { workArea } = screen.getPrimaryDisplay();
   whiteboardWin = new BrowserWindow({
-    x: bounds.x,
-    y: bounds.y,
-    width: bounds.width,
-    height: bounds.height,
+    x: workArea.x,
+    y: workArea.y,
+    width: workArea.width,
+    height: workArea.height,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -365,7 +365,7 @@ function createWindow() {
   mainWindow = win;
 }
 
-app.whenReady().then(() => { createWindow(); createWhiteboardBtnWindow(); });
+app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.destroy();
