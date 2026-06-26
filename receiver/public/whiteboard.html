@@ -77,7 +77,6 @@
     border-radius: 14px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.35);
     z-index: 10;
-    -webkit-app-region: drag;
   }
   .tool-btn {
     width: 56px; height: 56px;
@@ -94,7 +93,6 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    -webkit-app-region: no-drag;
   }
   .tool-btn .icon { font-size: 20px; line-height: 1; }
   .tool-btn .label { font-size: 10px; line-height: 1; opacity: 0.7; }
@@ -318,6 +316,31 @@
   var clearTrack = document.getElementById('clearTrack');
   var clearFill = document.getElementById('clearFill');
   var clearThumb = document.getElementById('clearThumb');
+
+  // ── Toolbar window drag (long-press = drag, short = click) ──
+  var tb = document.getElementById('toolbar');
+  var tdsx = 0, tdsy = 0, tdragging = false, tdtimer = null, ttracking = false;
+  tb.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
+    tdsx = e.screenX; tdsy = e.screenY;
+    ttracking = true; tdragging = false;
+    tdtimer = setTimeout(function() { tdragging = true; }, 300);
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!ttracking) return;
+    if (Math.abs(e.screenX - tdsx) > 3 || Math.abs(e.screenY - tdsy) > 3) {
+      clearTimeout(tdtimer); tdragging = true;
+    }
+    if (tdragging && window.electronAPI) {
+      window.electronAPI.moveWindow(e.screenX - tdsx, e.screenY - tdsy);
+      tdsx = e.screenX; tdsy = e.screenY;
+    }
+  });
+  window.addEventListener('mouseup', function(e) {
+    if (e.button !== 0) return;
+    clearTimeout(tdtimer);
+    ttracking = false; tdragging = false;
+  });
 
   // ── Offscreen strokes canvas (pixel-level) ──
   var strokesCanvas = document.createElement('canvas');

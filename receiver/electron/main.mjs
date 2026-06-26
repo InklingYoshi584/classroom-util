@@ -312,7 +312,14 @@ ipcMain.on('whiteboard-move-window', (_event, dx, dy) => {
   var win = BrowserWindow.fromWebContents(_event.sender);
   if (win && !win.isDestroyed()) {
     var pos = win.getPosition();
-    win.setPosition(pos[0] + dx, pos[1] + dy);
+    var nx = pos[0] + dx, ny = pos[1] + dy;
+    var wa = screen.getPrimaryDisplay().workArea;
+    var size = win.getSize();
+    if (nx < wa.x) nx = wa.x;
+    if (ny < wa.y) ny = wa.y;
+    if (nx + size[0] > wa.x + wa.width) nx = wa.x + wa.width - size[0];
+    if (ny + size[1] > wa.y + wa.height) ny = wa.y + wa.height - size[1];
+    win.setPosition(Math.round(nx), Math.round(ny));
   }
 });
 ipcMain.on('whiteboard-btn-position', (_event, side) => {
