@@ -306,6 +306,14 @@ ipcMain.on('show-whiteboard-button', () => {
 
 ipcMain.on('hide-whiteboard-button', () => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.setOpacity(0);
+
+ipcMain.on('whiteboard-move-window', (_event, dx, dy) => {
+  var win = BrowserWindow.fromWebContents(_event.sender);
+  if (win && !win.isDestroyed()) {
+    var pos = win.getPosition();
+    win.setPosition(pos[0] + dx, pos[1] + dy);
+  }
+});
 });
 ipcMain.on('whiteboard-btn-position', (_event, side) => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) {

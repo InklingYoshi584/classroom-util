@@ -21,13 +21,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    -webkit-app-region: drag;
   }
   #btnContainer {
     display: none;
     width: 100%; height: 100%;
     align-items: center; justify-content: center;
-    -webkit-app-region: drag;
   }
   #openBtn {
     height: 36px;
@@ -241,17 +239,33 @@
   if (ROLE === 'button') {
     document.body.classList.add('btn-mode');
     document.getElementById('btnContainer').style.display = 'flex';
-    var btn = document.getElementById('openBtn');
-    var startX = 0, startY = 0;
-    btn.addEventListener('mousedown', function(e) {
-      startX = e.screenX; startY = e.screenY;
-    });
-    btn.addEventListener('mouseup', function(e) {
-      if (Math.abs(e.screenX - startX) < 5 && Math.abs(e.screenY - startY) < 5) {
-        if (e.button === 0 && window.electronAPI) window.electronAPI.openWhiteboard();
+    var btnEl = document.getElementById('openBtn');
+    var dragStartX = 0, dragStartY = 0, winStartX = 0, winStartY = 0, dragging = false;
+    var onMouseDown = function(e) {
+      if (e.button !== 0) return;
+      dragStartX = e.screenX; dragStartY = e.screenY;
+      dragging = false;
+    };
+    document.body.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', function(e) {
+      if (dragStartX === 0 && dragStartY === 0) return;
+      if (dragging) {
+        if (window.electronAPI) window.electronAPI.moveWindow(e.screenX - dragStartX, e.screenY - dragStartY);
+        dragStartX = e.screenX; dragStartY = e.screenY;
+        return;
+      }
+      if (Math.abs(e.screenX - dragStartX) > 3 || Math.abs(e.screenY - dragStartY) > 3) {
+        dragging = true;
       }
     });
-    btn.addEventListener('contextmenu', function(e) {
+    window.addEventListener('mouseup', function(e) {
+      if (e.button !== 0) return;
+      if (!dragging && dragStartX !== 0) {
+        window.electronAPI && window.electronAPI.openWhiteboard();
+      }
+      dragStartX = 0; dragStartY = 0; dragging = false;
+    });
+    btnEl.addEventListener('contextmenu', function(e) {
       e.preventDefault();
       if (window.electronAPI) window.electronAPI.closeButton();
     });
