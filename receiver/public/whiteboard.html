@@ -241,10 +241,14 @@
     var dsx = 0, dsy = 0, dragging = false, dragTimer = null, tracking = false;
     var winX = 0, winY = 0;
     function startDrag() { dragging = true; }
-    document.body.addEventListener('mousedown', function(e) {
+    document.body.addEventListener('mousedown', async function(e) {
       if (e.button !== 0) return;
       dsx = e.screenX; dsy = e.screenY;
-      winX = e.screenX; winY = e.screenY;
+      winX = e.screenX; winY = e.screenY; // fallback
+      if (window.electronAPI) {
+        var r = await window.electronAPI.getWindowPos();
+        if (r && r.ok) { winX = r.x; winY = r.y; }
+      }
       tracking = true;
       dragging = false;
       dragTimer = setTimeout(startDrag, 300);
@@ -324,10 +328,14 @@
   var tb = document.getElementById('toolbar');
   var tdsx = 0, tdsy = 0, tdragging = false, tdtimer = null, ttracking = false;
   var twinX = 0, twinY = 0;
-  tb.addEventListener('mousedown', function(e) {
+  tb.addEventListener('mousedown', async function(e) {
     if (e.button !== 0) return;
     tdsx = e.screenX; tdsy = e.screenY;
     twinX = e.screenX; twinY = e.screenY;
+    if (window.electronAPI) {
+      var r = await window.electronAPI.getWindowPos();
+      if (r && r.ok) { twinX = r.x; twinY = r.y; }
+    }
     ttracking = true; tdragging = false;
     tdtimer = setTimeout(function() { tdragging = true; }, 300);
   });

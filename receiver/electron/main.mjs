@@ -335,6 +335,15 @@ ipcMain.on('whiteboard-move-to', (_event, x, y) => {
     win.setPosition(Math.round(x), Math.round(y));
   }
 });
+
+ipcMain.handle('whiteboard-get-pos', (_event) => {
+  var win = BrowserWindow.fromWebContents(_event.sender);
+  if (win && !win.isDestroyed()) {
+    var p = win.getPosition();
+    return { ok: true, x: p[0], y: p[1] };
+  }
+  return { ok: false };
+});
 ipcMain.on('whiteboard-btn-position', (_event, side) => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) {
     var wa = screen.getPrimaryDisplay().workArea;
