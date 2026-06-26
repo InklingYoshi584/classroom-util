@@ -217,7 +217,7 @@ function createWhiteboardBtnWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'whiteboard-preload.mjs'),
+      preload: path.join(__dirname, 'whiteboard-preload.cjs'),
     },
   });
   whiteboardBtnWin.loadFile(path.join(__dirname, '..', 'dist', 'whiteboard.html'), {
@@ -242,20 +242,19 @@ function createWhiteboardOverlayWindow() {
     alwaysOnTop: true,
     resizable: false,
     skipTaskbar: true,
+    show: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'whiteboard-preload.mjs'),
+      preload: path.join(__dirname, 'whiteboard-preload.cjs'),
     },
   });
   whiteboardWin.loadFile(path.join(__dirname, '..', 'dist', 'whiteboard.html'), {
     query: { role: 'overlay' },
   });
   whiteboardWin.on('closed', () => { whiteboardWin = null; });
-
-  whiteboardWin.webContents.session.setPermissionRequestHandler((_webContents, permission, callback) => {
-    if (permission === 'media') callback(true);
-    else callback(false);
+  whiteboardWin.webContents.session.setPermissionRequestHandler((_wc, permission, cb) => {
+    cb(permission === 'media');
   });
 }
 // ── Whiteboard IPC ──
@@ -275,6 +274,12 @@ ipcMain.handle('capture-screen', async () => {
   }
 });
 
+ipcMain.on('whiteboard-set-ignore-mouse', (_event, ignore) => {
+  if (whiteboardWin && !whiteboardWin.isDestroyed()) {
+    whiteboardWin.setIgnoreMouseEvents(ignore, { forward: true });
+  }
+});
+
 ipcMain.on('show-whiteboard-button', () => {
   createWhiteboardBtnWindow();
 });
@@ -282,19 +287,18 @@ ipcMain.on('show-whiteboard-button', () => {
 ipcMain.on('hide-whiteboard-button', () => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.hide();
 });
-
-ipcMain.handle('open-whiteboard-overlay', () => {
+ipcMain.handle('open-whiteboard-overlay', async () => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.hide();
   createWhiteboardOverlayWindow();
   return { ok: true };
 });
+
 
 ipcMain.handle('close-whiteboard-overlay', () => {
   if (whiteboardWin && !whiteboardWin.isDestroyed()) whiteboardWin.hide();
   createWhiteboardBtnWindow();
   return { ok: true };
 });
-
 ipcMain.handle('save-screenshot', async (_event, dataUrl) => {
   try {
     const desktopPath = app.getPath('desktop');
@@ -307,6 +311,8 @@ ipcMain.handle('save-screenshot', async (_event, dataUrl) => {
     return { ok: false, error: e.message };
   }
 });
+
+let mainWindow = null;
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -324,6 +330,12 @@ function createWindow() {
   });
 
   win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
+  win.on('closed', () => {
+    mainWindow = null;
+    if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.destroy();
+    if (whiteboardWin && !whiteboardWin.isDestroyed()) whiteboardWin.destroy();
+  });
+  mainWindow = win;
 }
 
 app.whenReady().then(() => { createWindow(); createWhiteboardBtnWindow(); });

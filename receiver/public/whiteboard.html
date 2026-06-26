@@ -202,6 +202,7 @@
   <div id="toolbar">
     <button id="penBtn" class="tool-btn" title="画笔">✏️</button>
     <button id="eraserBtn" class="tool-btn" title="擦除">🧹</button>
+    <button id="selectBtn" class="tool-btn" title="选择模式（穿透点击）">👆</button>
     <button id="lockBtn" class="tool-btn" title="锁定背景">🔒</button>
     <button id="saveBtn" class="tool-btn" title="保存到桌面">💾</button>
     <button id="closeBtn" class="tool-btn" title="关闭">✕</button>
@@ -235,15 +236,21 @@
     document.body.classList.add('btn-mode');
     document.getElementById('btnContainer').style.display = 'flex';
     document.getElementById('openBtn').onclick = () => {
-      window.whiteboardAPI.openOverlay();
+      if (window.electronAPI) window.electronAPI.openWhiteboard();
     };
     return;
   }
 
-  // ── Overlay mode ──
-  document.body.classList.add('overlay-mode');
-  var overlayContainer = document.getElementById('overlayContainer');
-  overlayContainer.style.display = 'block';
+  if (ROLE === 'overlay') {
+    document.body.classList.add('overlay-mode');
+    var overlayContainer = document.getElementById('overlayContainer');
+    overlayContainer.style.display = 'block';
+  } else {
+    return;
+  }
+
+  // ↓ overlay mode code continues here
+
 
   // ── State ──
   var toolMode = 'pen'; // 'pen' | 'eraser'
@@ -267,6 +274,7 @@
   var mainCtx = mainCanvas.getContext('2d');
   var penBtn = document.getElementById('penBtn');
   var eraserBtn = document.getElementById('eraserBtn');
+  var selectBtn = document.getElementById('selectBtn');
   var lockBtn = document.getElementById('lockBtn');
   var saveBtn = document.getElementById('saveBtn');
   var closeBtn = document.getElementById('closeBtn');
@@ -370,7 +378,7 @@
     lockBtn.disabled = true;
     saveBtn.disabled = true;
     try {
-      var result = await window.whiteboardAPI.captureScreen();
+      var result = await window.electronAPI.captureScreen();
       if (!result.ok) { capturing = false; lockBtn.disabled = false; saveBtn.disabled = false; return; }
       var stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
@@ -378,10 +386,6 @@
           mandatory: {
             chromeMediaSource: 'desktop',
             chromeMediaSourceId: result.sourceId,
-            minWidth: window.innerWidth,
-            maxWidth: window.innerWidth,
-            minHeight: window.innerHeight,
-            maxHeight: window.innerHeight,
           }
         }
       });
@@ -392,16 +396,17 @@
         video.onplaying = r;
         if (video.readyState >= 2) r();
       });
-      // Wait a frame for video to render
       await new Promise(function(r) { requestAnimationFrame(r); });
       var offCanvas = document.createElement('canvas');
       offCanvas.width = video.videoWidth;
       offCanvas.height = video.videoHeight;
       offCanvas.getContext('2d').drawImage(video, 0, 0, offCanvas.width, offCanvas.height);
       stream.getTracks().forEach(function(t) { t.stop(); });
-      // Create Image from offCanvas
       var img = new Image();
-      img.onload = function() { bgImage = img; };
+      img.onload = function() {
+        bgImage = img;
+        lockBtn.classList.add('active');
+      };
       img.src = offCanvas.toDataURL();
     } finally {
       capturing = false;
@@ -424,7 +429,7 @@
       if (bgImage) { ctx.drawImage(bgImage, 0, 0); }
       else {
         // Capture screen without background image
-        var result = await window.whiteboardAPI.captureScreen();
+        var result = await window.electronAPI.captureScreen();
         if (result.ok) {
           var stream2 = await navigator.mediaDevices.getUserMedia({
             audio: false,
@@ -432,10 +437,6 @@
               mandatory: {
                 chromeMediaSource: 'desktop',
                 chromeMediaSourceId: result.sourceId,
-                minWidth: window.innerWidth,
-                maxWidth: window.innerWidth,
-                minHeight: window.innerHeight,
-                maxHeight: window.innerHeight,
               }
             }
           });
@@ -457,7 +458,7 @@
       }
       ctx.drawImage(strokesCanvas, 0, 0);
       var dataUrl = c.toDataURL('image/png');
-      await window.whiteboardAPI.saveScreenshot(dataUrl);
+      await window.electronAPI.saveScreenshot(dataUrl);
     } finally {
       capturing = false;
       lockBtn.disabled = false;
@@ -560,13 +561,28 @@
     penPanelVisible = false;
     updateToolbarUI();
   });
+  selectBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    penPanelVisible = false;
+    eraserPanelVisible = false;
+    updateToolbarUI();
+    // Hide overlay, show button — clicks pass through to desktop
+    window.electronAPI.showButton();
+    window.electronAPI.closeWhiteboard();
+  });
 
   lockBtn.addEventListener('click', function(e) {
     e.stopPropagation();
     penPanelVisible = false;
     eraserPanelVisible = false;
     updateToolbarUI();
-    lockBackground();
+    if (bgImage) {
+      // Unlock — clear background
+      bgImage = null;
+      lockBtn.classList.remove('active');
+    } else {
+      lockBackground();
+    }
   });
 
   saveBtn.addEventListener('click', function(e) {
@@ -575,11 +591,6 @@
     eraserPanelVisible = false;
     updateToolbarUI();
     saveToDesktop();
-  });
-
-  closeBtn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    window.whiteboardAPI.closeOverlay();
   });
 
   // Thickness slider
