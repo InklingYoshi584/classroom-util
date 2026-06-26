@@ -242,6 +242,10 @@
     document.getElementById('openBtn').onclick = () => {
       if (window.electronAPI) window.electronAPI.openWhiteboard();
     };
+    document.getElementById('openBtn').oncontextmenu = (e) => {
+      e.preventDefault();
+      if (window.electronAPI) window.electronAPI.closeButton();
+    };
     return;
   }
 

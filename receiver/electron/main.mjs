@@ -64,6 +64,11 @@ ipcMain.handle('load-homework-data', (_event, classId) => {
   return {};
 });
 
+ipcMain.handle('close-whiteboard-button', () => {
+  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) { whiteboardBtnWin.close(); whiteboardBtnWin = null; }
+  return { ok: true };
+});
+
 ipcMain.handle('save-homework-data', (_event, classId, data) => {
   try {
     ensureDir(DATA_DIR);
@@ -360,7 +365,7 @@ function createWindow() {
   mainWindow = win;
 }
 
-app.whenReady().then(() => { createWindow(); createWhiteboardBtnWindow(); });
+app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.destroy();

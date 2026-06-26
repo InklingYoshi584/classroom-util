@@ -9,5 +9,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showButton: () => ipcRenderer.send('show-whiteboard-button'),
   hideButton: () => ipcRenderer.send('hide-whiteboard-button'),
   setButtonPosition: (side) => ipcRenderer.send('whiteboard-btn-position', side),
+  closeButton: () => ipcRenderer.invoke('close-whiteboard-button'),
   onExitSelectMode: (callback) => ipcRenderer.on('exit-select-mode', () => callback()),
 });
