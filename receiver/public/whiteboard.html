@@ -245,6 +245,15 @@
     document.body.classList.add('overlay-mode');
     var overlayContainer = document.getElementById('overlayContainer');
     overlayContainer.style.display = 'block';
+
+  if (window.electronAPI && window.electronAPI.onExitSelectMode) {
+    window.electronAPI.onExitSelectMode(function() {
+      if (toolMode === 'select') {
+        toolMode = 'pen';
+        updateToolbarUI();
+      }
+    });
+  }
   } else {
     return;
   }
@@ -319,6 +328,7 @@
   function updateToolbarUI() {
     penBtn.classList.toggle('active', toolMode === 'pen');
     eraserBtn.classList.toggle('active', toolMode === 'eraser');
+    selectBtn.classList.toggle('active', toolMode === 'select');
     penPanel.style.display = penPanelVisible ? 'block' : 'none';
     eraserPanel.style.display = eraserPanelVisible ? 'block' : 'none';
   }
@@ -370,7 +380,7 @@
     updateClearUI();
   });
 
-  // ── Lock: capture screen as background ──
+  // ── Lock: capture screen as background (native resolution via thumbnail) ──
   var capturing = false;
   async function lockBackground() {
     if (capturing) return;
@@ -379,35 +389,13 @@
     saveBtn.disabled = true;
     try {
       var result = await window.electronAPI.captureScreen();
-      if (!result.ok) { capturing = false; lockBtn.disabled = false; saveBtn.disabled = false; return; }
-      var stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          mandatory: {
-            chromeMediaSource: 'desktop',
-            chromeMediaSourceId: result.sourceId,
-          }
-        }
-      });
-      var video = document.createElement('video');
-      video.srcObject = stream;
-      video.onloadedmetadata = function() { video.play(); };
-      await new Promise(function(r) {
-        video.onplaying = r;
-        if (video.readyState >= 2) r();
-      });
-      await new Promise(function(r) { requestAnimationFrame(r); });
-      var offCanvas = document.createElement('canvas');
-      offCanvas.width = video.videoWidth;
-      offCanvas.height = video.videoHeight;
-      offCanvas.getContext('2d').drawImage(video, 0, 0, offCanvas.width, offCanvas.height);
-      stream.getTracks().forEach(function(t) { t.stop(); });
+      if (!result.ok || !result.dataUrl) { return; }
       var img = new Image();
       img.onload = function() {
         bgImage = img;
         lockBtn.classList.add('active');
       };
-      img.src = offCanvas.toDataURL();
+      img.src = result.dataUrl;
     } finally {
       capturing = false;
       lockBtn.disabled = false;
@@ -426,34 +414,14 @@
       c.width = window.innerWidth;
       c.height = window.innerHeight;
       var ctx = c.getContext('2d');
-      if (bgImage) { ctx.drawImage(bgImage, 0, 0); }
-      else {
-        // Capture screen without background image
+      if (bgImage) {
+        ctx.drawImage(bgImage, 0, 0, c.width, c.height);
+      } else {
         var result = await window.electronAPI.captureScreen();
-        if (result.ok) {
-          var stream2 = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: {
-              mandatory: {
-                chromeMediaSource: 'desktop',
-                chromeMediaSourceId: result.sourceId,
-              }
-            }
-          });
-          var video2 = document.createElement('video');
-          video2.srcObject = stream2;
-          video2.onloadedmetadata = function() { video2.play(); };
-          await new Promise(function(r) {
-            video2.onplaying = r;
-            if (video2.readyState >= 2) r();
-          });
-          await new Promise(function(r) { requestAnimationFrame(r); });
-          var oc2 = document.createElement('canvas');
-          oc2.width = video2.videoWidth;
-          oc2.height = video2.videoHeight;
-          oc2.getContext('2d').drawImage(video2, 0, 0, oc2.width, oc2.height);
-          stream2.getTracks().forEach(function(t) { t.stop(); });
-          ctx.drawImage(oc2, 0, 0, c.width, c.height);
+        if (result.ok && result.dataUrl) {
+          var bg = new Image();
+          await new Promise(function(r) { bg.onload = r; bg.src = result.dataUrl; });
+          ctx.drawImage(bg, 0, 0, c.width, c.height);
         }
       }
       ctx.drawImage(strokesCanvas, 0, 0);
@@ -540,6 +508,11 @@
   // ── Toolbar button events ──
   penBtn.addEventListener('click', function(e) {
     e.stopPropagation();
+    // Exit select mode if active
+    if (toolMode === 'select') {
+      window.electronAPI.setIgnoreMouseEvents(false);
+      window.electronAPI.hideButton();
+    }
     if (toolMode === 'pen') {
       penPanelVisible = !penPanelVisible;
     } else {
@@ -552,6 +525,10 @@
 
   eraserBtn.addEventListener('click', function(e) {
     e.stopPropagation();
+    if (toolMode === 'select') {
+      window.electronAPI.setIgnoreMouseEvents(false);
+      window.electronAPI.hideButton();
+    }
     if (toolMode === 'eraser') {
       eraserPanelVisible = !eraserPanelVisible;
     } else {
@@ -565,10 +542,11 @@
     e.stopPropagation();
     penPanelVisible = false;
     eraserPanelVisible = false;
+    toolMode = 'select';
     updateToolbarUI();
-    // Hide overlay, show button — clicks pass through to desktop
+    // Forward clicks through to desktop, keep overlay visible
+    window.electronAPI.setIgnoreMouseEvents(true);
     window.electronAPI.showButton();
-    window.electronAPI.closeWhiteboard();
   });
 
   lockBtn.addEventListener('click', function(e) {
@@ -577,7 +555,6 @@
     eraserPanelVisible = false;
     updateToolbarUI();
     if (bgImage) {
-      // Unlock — clear background
       bgImage = null;
       lockBtn.classList.remove('active');
     } else {
@@ -591,6 +568,11 @@
     eraserPanelVisible = false;
     updateToolbarUI();
     saveToDesktop();
+  });
+
+  closeBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    window.electronAPI.closeWhiteboard();
   });
 
   // Thickness slider

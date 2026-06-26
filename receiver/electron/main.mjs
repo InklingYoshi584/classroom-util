@@ -266,9 +266,13 @@ function formatTimestamp() {
 
 ipcMain.handle('capture-screen', async () => {
   try {
-    const sources = await desktopCapturer.getSources({ types: ['screen'] });
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const sources = await desktopCapturer.getSources({
+      types: ['screen'],
+      thumbnailSize: primaryDisplay.size,
+    });
     if (sources.length === 0) return { ok: false, error: 'No screen sources' };
-    return { ok: true, sourceId: sources[0].id };
+    return { ok: true, dataUrl: sources[0].thumbnail.toDataURL() };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -290,6 +294,10 @@ ipcMain.on('hide-whiteboard-button', () => {
 ipcMain.handle('open-whiteboard-overlay', async () => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.hide();
   createWhiteboardOverlayWindow();
+  if (whiteboardWin && !whiteboardWin.isDestroyed()) {
+    whiteboardWin.setIgnoreMouseEvents(false);
+    whiteboardWin.webContents.send('exit-select-mode');
+  }
   return { ok: true };
 });
 

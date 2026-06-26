@@ -8,4 +8,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setIgnoreMouseEvents: (ignore) => ipcRenderer.send('whiteboard-set-ignore-mouse', ignore),
   showButton: () => ipcRenderer.send('show-whiteboard-button'),
   hideButton: () => ipcRenderer.send('hide-whiteboard-button'),
+  onExitSelectMode: (callback) => ipcRenderer.on('exit-select-mode', () => callback()),
 });
