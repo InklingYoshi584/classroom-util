@@ -228,15 +228,12 @@ function createWhiteboardBtnWindow() {
   whiteboardBtnWin.loadFile(path.join(__dirname, '..', 'dist', 'whiteboard.html'), {
     query: { role: 'button' },
   });
-  whiteboardBtnWin.webContents.on('did-finish-load', () => {
-    whiteboardBtnWin.setOpacity(0);
-  });
   whiteboardBtnWin.on('closed', () => { whiteboardBtnWin = null; });
 }
 
 function createWhiteboardOverlayWindow() {
   if (whiteboardWin && !whiteboardWin.isDestroyed()) {
-    whiteboardWin.show();
+    whiteboardWin.setOpacity(1);
     return;
   }
   const { workArea } = screen.getPrimaryDisplay();
@@ -310,7 +307,7 @@ ipcMain.on('whiteboard-btn-position', (_event, side) => {
   }
 });
 ipcMain.handle('open-whiteboard-overlay', async () => {
-  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.setOpacity(1);
+  createWhiteboardBtnWindow();
   return { ok: true };
 });
 
@@ -326,7 +323,7 @@ ipcMain.handle('launch-whiteboard-overlay', async () => {
 
 
 ipcMain.handle('close-whiteboard-overlay', () => {
-  if (whiteboardWin && !whiteboardWin.isDestroyed()) whiteboardWin.hide();
+  if (whiteboardWin && !whiteboardWin.isDestroyed()) whiteboardWin.setOpacity(0);
   createWhiteboardBtnWindow();
   return { ok: true };
 });
@@ -372,6 +369,7 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
   createWhiteboardBtnWindow();
+  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.setOpacity(0);
 });
 
 app.on('window-all-closed', () => {
