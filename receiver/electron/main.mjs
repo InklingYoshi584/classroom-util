@@ -169,7 +169,7 @@ function createHomeworkWindow(classId, serverHost) {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: path.join(__dirname, 'preload.cjs'),
     },
   });
   homeworkWindow.loadFile(path.join(__dirname, '..', 'dist', 'homework.html'), {
@@ -310,13 +310,14 @@ ipcMain.on('whiteboard-btn-position', (_event, side) => {
   }
 });
 ipcMain.handle('open-whiteboard-overlay', async () => {
+  if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.setOpacity(1);
+  return { ok: true };
+});
+
+ipcMain.handle('launch-whiteboard-overlay', async () => {
   if (whiteboardBtnWin && !whiteboardBtnWin.isDestroyed()) whiteboardBtnWin.setOpacity(0);
   createWhiteboardOverlayWindow();
   if (whiteboardWin && !whiteboardWin.isDestroyed()) {
-    whiteboardBtnWin && !whiteboardBtnWin.isDestroyed() && whiteboardBtnWin.setPosition(
-      screen.getPrimaryDisplay().workArea.x + screen.getPrimaryDisplay().workArea.width - 130 - 16,
-      screen.getPrimaryDisplay().workArea.y + screen.getPrimaryDisplay().workArea.height - 44 - 16
-    );
     whiteboardWin.setIgnoreMouseEvents(false);
     whiteboardWin.webContents.send('exit-select-mode');
   }
@@ -355,7 +356,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: path.join(__dirname, 'preload.cjs'),
     },
   });
 
