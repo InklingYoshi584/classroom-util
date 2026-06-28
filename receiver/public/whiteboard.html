@@ -323,8 +323,6 @@
   document.addEventListener('mousedown', function(e) {
     if (e.button !== 0) return;
     if (!e.target.closest('#toolbar')) return;
-    tb.style.background = 'rgba(59,130,246,0.6)';
-    setTimeout(function() { tb.style.background = ''; }, 200);
     tdsx = e.screenX; tdsy = e.screenY;
     ttracking = true; tdragging = false;
     tdtimer = setTimeout(function() { tdragging = true; }, 300);
@@ -333,19 +331,16 @@
     if (!ttracking) return;
     if (Math.abs(e.screenX - tdsx) > 3 || Math.abs(e.screenY - tdsy) > 3) {
       clearTimeout(tdtimer); tdragging = true;
-      tb.style.background = 'rgba(34,197,94,0.5)';
     }
     if (tdragging && window.electronAPI) {
       window.electronAPI.moveWindow(e.screenX - tdsx, e.screenY - tdsy);
       tdsx = e.screenX; tdsy = e.screenY;
-      tb.style.background = 'rgba(239,68,68,0.5)';
     }
   });
   window.addEventListener('mouseup', function(e) {
     if (e.button !== 0) return;
     clearTimeout(tdtimer);
     ttracking = false; tdragging = false;
-    tb.style.background = '';
   });
 
   // ── Offscreen strokes canvas (pixel-level) ──
