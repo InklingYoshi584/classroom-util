@@ -29,6 +29,7 @@ export function ReceiverPage() {
   const [timerWindowOpen, setTimerWindowOpen] = useState(false);
   const [showConnectOverlay, setShowConnectOverlay] = useState(true);
   const [seatingLayout, setSeatingLayout] = useState<object | null>(null);
+  const [showToolsOverlay, setShowToolsOverlay] = useState(false);
 
   const popupTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const scheduleActiveRef = useRef(false);
@@ -287,6 +288,24 @@ export function ReceiverPage() {
     setTimerWindowOpen(true);
   }, []);
 
+  const handleOpenSeatingFromTools = async () => {
+    setShowToolsOverlay(false);
+    const host = serverHostRef.current.trim();
+    const cls = classId.trim();
+    try {
+      const apiBase = host ? `http://${host}:8787` : '';
+      const res = await fetch(`${apiBase}/api/seating?class=${encodeURIComponent(cls)}`);
+      const data = await res.json();
+      const layout = data.seating || null;
+      if (layout) {
+        setSeatingLayout(layout);
+        electronApi.openSeatingChart(layout);
+      }
+    } catch {
+      // no-op if fetch fails
+    }
+  };
+
   const statusLabel: Record<MqttStatus, string> = {
     disconnected: '未连接',
     connecting: '连接中...',
@@ -373,6 +392,9 @@ export function ReceiverPage() {
                 &#x1FA91; 座位表
               </button>
             )}
+            <button className="tools-open-btn" onClick={() => setShowToolsOverlay(true)}>
+              工具
+            </button>
           </div>
 
           {schedule.length > 0 && (
@@ -557,6 +579,25 @@ export function ReceiverPage() {
             <div className="pin-gate-buttons">
               <button className="cancel-btn" onClick={handleGatePinCancel}>取消</button>
               <button className="confirm-btn" onClick={handleGatePinSubmit}>确认</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Tools overlay ── */}
+      {showToolsOverlay && (
+        <div className="overlay" onClick={() => setShowToolsOverlay(false)}>
+          <div className="tools-overlay" onClick={(e) => e.stopPropagation()}>
+            <div className="tools-overlay-header">
+              <h3>工具</h3>
+              <button className="close-btn" onClick={() => setShowToolsOverlay(false)}>&#10005;</button>
+            </div>
+            <div className="tools-overlay-grid">
+              <button className="tools-overlay-card" onClick={handleOpenSeatingFromTools}>
+                <span className="tools-overlay-icon">&#x1FA91;</span>
+                <span className="tools-overlay-label">座位表</span>
+                <span className="tools-overlay-desc">查看班级座位布局</span>
+              </button>
             </div>
           </div>
         </div>
