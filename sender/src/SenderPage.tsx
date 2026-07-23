@@ -7,6 +7,7 @@ import { parseStudentCsv } from './lib/csv';
 import { searchStudents, toPinyin } from './lib/pinyin-search';
 import { HomeworkTracker } from './HomeworkTracker';
 import { SeatingChart, SeatLayout } from './SeatingChart';
+import { ScheduleEditor } from './ScheduleEditor';
 import './SenderPage.css';
 
 export function SenderPage() {
@@ -45,6 +46,7 @@ export function SenderPage() {
   const [showStudentPicker, setShowStudentPicker] = useState(false);
   const [showSeatingChart, setShowSeatingChart] = useState(false);
   const [seatingInitial, setSeatingInitial] = useState<SeatLayout | null>(null);
+  const [showScheduleEditor, setShowScheduleEditor] = useState(false);
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
   const [studentPickerMode, setStudentPickerMode] = useState<'insert' | 'send'>('insert');
   const [pendingTemplate, setPendingTemplate] = useState<string | null>(null);
@@ -862,6 +864,11 @@ export function SenderPage() {
                   <span className="tool-card-label">座位表</span>
                   <span className="tool-card-desc">拖拽安排学生座位，发布到接收端</span>
                 </button>
+                <button className="tool-card" onClick={() => setShowScheduleEditor(true)}>
+                  <span className="tool-card-icon">&#x1F4C5;</span>
+                  <span className="tool-card-label">课表</span>
+                  <span className="tool-card-desc">配置每日课程安排，推送课表</span>
+                </button>
               </div>
             </div>
           ) : (
@@ -927,6 +934,14 @@ export function SenderPage() {
           initial={seatingInitial}
           onPublish={handlePublishSeating}
           onClose={() => { setShowSeatingChart(false); setSeatingInitial(null); }}
+        />
+      )}
+
+      {showScheduleEditor && (
+        <ScheduleEditor
+          classId={connectedClass}
+          sudoPassword={sudoPassword}
+          onClose={() => setShowScheduleEditor(false)}
         />
       )}
 

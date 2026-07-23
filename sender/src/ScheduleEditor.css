@@ -1,0 +1,235 @@
+.sch-editor {
+  background: #111827;
+  border-radius: 12px;
+  width: 90vw;
+  max-width: 960px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  color: #e5e7eb;
+}
+
+.sch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+.sch-header h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Config step */
+.sch-config {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sch-config h4 {
+  font-size: 1.05rem;
+  margin: 0 0 4px;
+}
+
+.sch-pin-hint {
+  color: rgba(255,255,255,0.4);
+  font-size: 0.85rem;
+  margin: 0 0 4px;
+}
+
+.sch-pin-input {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #e5e7eb;
+  font-size: 0.95rem;
+  width: 200px;
+}
+
+.sch-pin-error {
+  color: #ef4444;
+  font-size: 0.8rem;
+}
+
+.sch-config label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.6);
+}
+
+.sch-config input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  width: 80px;
+  text-align: center;
+}
+
+/* Grid */
+.sch-grid-wrap {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 16px;
+  min-height: 0;
+}
+
+.sch-paste-banner {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+
+.sch-paste-banner button {
+  padding: 2px 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  color: #e5e7eb;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.sch-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.sch-grid th {
+  padding: 8px 4px;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sch-grid th:first-child { width: 120px; }
+
+.sch-time-cell {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 2px;
+  justify-content: center;
+}
+
+.sch-time-input {
+  width: 44px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #9ca3af;
+  font-size: 0.75rem;
+  text-align: center;
+  font-family: monospace;
+}
+
+.sch-time-input:focus {
+  border-color: #3b82f6;
+  color: #e5e7eb;
+}
+
+.sch-time-sep {
+  color: rgba(255,255,255,0.2);
+  font-size: 0.7rem;
+}
+
+.sch-cell {
+  padding: 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: background 0.1s;
+  min-height: 36px;
+}
+
+.sch-cell:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.sch-cell.paste-target {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.sch-cell.paste-target:hover {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.sch-cell.filled {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.sch-cell.filled:hover {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+.sch-cell-input {
+  width: 100%;
+  padding: 5px 6px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #93c5fd;
+  font-size: 0.8rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.sch-cell-input:focus {
+  border-color: #3b82f6;
+  background: rgba(255,255,255,0.04);
+  outline: none;
+}
+
+.sch-cell-hint {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.25);
+}
+
+/* Footer */
+.sch-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 0 4px;
+}
+
+.sch-save-btn {
+  padding: 8px 24px;
+  border: none;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sch-save-btn:hover {
+  background: #2563eb;
+}
+
+.sch-save-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
