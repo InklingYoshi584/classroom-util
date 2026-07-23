@@ -41,7 +41,7 @@ function saveData(data) {
   }
 }
 function persist() {
-  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule, messageCache, seating: seatingMap });
+  saveData({ pins: [...pinSet], students: studentsMap, periodConfig, classSchedules, messageCache, seating: seatingMap });
 }
 
 // ── Daily homework file helpers ──
@@ -83,8 +83,27 @@ const persisted = loadData();
 const pinSet = new Set(persisted.pins || []);
 const studentsMap = persisted.students || {};
 let globalSchedule = persisted.schedules || [];
-const messageCache = persisted.messageCache || {}; // classId -> messages[]
-const seatingMap = persisted.seating || {}; // classId -> SeatLayout
+// Schedule v2: periodConfig (global) + classSchedules (per-classId)
+let periodConfig = persisted.periodConfig || null;
+const classSchedules = persisted.classSchedules || {};
+const messageCache = persisted.messageCache || {};
+const seatingMap = persisted.seating || {};
+
+// Auto-migrate legacy globalSchedule to periodConfig
+if (!periodConfig && globalSchedule.length > 0) {
+  const first = globalSchedule[0];
+  const [sh, sm] = (first.start || '08:00').split(':').map(Number);
+  const [eh, em] = (first.end || '08:45').split(':').map(Number);
+  const dur = (eh * 60 + em) - (sh * 60 + sm);
+  periodConfig = {
+    periodsPerDay: globalSchedule.length,
+    periodDuration: dur > 0 ? dur : 45,
+    firstStart: first.start || '08:00',
+    periodTimes: globalSchedule.map(s => ({ start: s.start, end: s.end })),
+  };
+  globalSchedule = [];
+  persist();
+}
 
 // ── Auto-migrate legacy hwData from data.json to daily files ──
 if (persisted.hwData && Object.keys(persisted.hwData).length > 0) {
@@ -97,7 +116,7 @@ if (persisted.hwData && Object.keys(persisted.hwData).length > 0) {
     }
   }
   delete persisted.hwData;
-  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule, messageCache });
+  persist();
 }
 
 
@@ -231,27 +250,51 @@ app.post('/api/hw/migrate', (req, res) => {
     }
   }
   delete persisted.hwData;
-  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule });
+  persist();
   console.log(`[DATA] manual migrate: ${count} hw entries to daily files`);
   res.json({ ok: true, count });
 });
 
-// ── Classroom schedule API (global) ──
+// ── Schedule API v2 ──
+// Backward compat: GET /api/schedule still returns periodTimes for classroom mode
 app.get('/api/schedule', (_req, res) => {
-  res.json({ schedule: globalSchedule });
+  res.json({ schedule: periodConfig?.periodTimes || [] });
 });
 
-app.post('/api/schedule/set', (req, res) => {
-  const { schedule, sudo } = req.body || {};
+app.get('/api/schedule/config', (_req, res) => {
+  res.json({ periodConfig, classSchedules });
+});
+
+app.post('/api/schedule/config', (req, res) => {
+  const { periodConfig: pc, sudo } = req.body || {};
   if (sudo !== SUDO_PASSWORD) {
     return res.status(403).json({ ok: false, error: 'Sudo 密码错误' });
   }
-  if (!Array.isArray(schedule)) {
+  if (!pc || typeof pc.periodsPerDay !== 'number') {
     return res.status(400).json({ ok: false, error: '参数错误' });
   }
-  globalSchedule = schedule;
+  periodConfig = pc;
   persist();
-  console.log(`[DATA] schedule: ${schedule.length} slots`);
+  console.log(`[DATA] schedule config: ${pc.periodsPerDay} periods, ${pc.periodDuration}min`);
+  res.json({ ok: true });
+});
+
+app.get('/api/schedule/class', (req, res) => {
+  const cls = req.query.class || '';
+  res.json({ schedule: classSchedules[cls] || null });
+});
+
+app.post('/api/schedule/class', (req, res) => {
+  const { class: cls, schedule: sched, sudo } = req.body || {};
+  if (sudo !== SUDO_PASSWORD) {
+    return res.status(403).json({ ok: false, error: 'Sudo 密码错误' });
+  }
+  if (!cls || typeof sched !== 'object') {
+    return res.status(400).json({ ok: false, error: '参数错误' });
+  }
+  classSchedules[cls] = sched;
+  persist();
+  console.log(`[DATA] schedule class ${cls}: saved`);
   res.json({ ok: true });
 });
 
