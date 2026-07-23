@@ -22,9 +22,6 @@ export function ReceiverPage() {
   const [pinVerified, setPinVerified] = useState(false);
   const [gatePinInput, setGatePinInput] = useState('');
   const [gatePinError, setGatePinError] = useState('');
-  const [configLocked, setConfigLocked] = useState(false);
-  const [configUnlockPin, setConfigUnlockPin] = useState('');
-  const [configPinError, setConfigPinError] = useState('');
   const [hwReloadTrigger, setHwReloadTrigger] = useState(0);
   const [schedule, setSchedule] = useState<{ start: string; end: string }[]>([]);
   const [scheduleActive, setScheduleActive] = useState(false);
@@ -117,6 +114,13 @@ export function ReceiverPage() {
     }
   }, [status]);
 
+  // Reset PIN gate when disconnected
+  useEffect(() => {
+    if (status !== 'connected') {
+      setPinVerified(false);
+    }
+  }, [status]);
+
   // Fetch schedule and check status
   useEffect(() => {
     if (!classId.trim()) return;
@@ -182,39 +186,7 @@ export function ReceiverPage() {
     if (!trimmed) return;
     electronApi.saveConfig({ classId: trimmed, serverHost: serverHost.trim() || undefined });
     mqttRef.current?.connect(trimmed, serverHost.trim() || undefined);
-    setConfigLocked(true);
   }, [classId, serverHost]);
-
-  const handleConfigUnlockRequest = async () => {
-    const host = serverHostRef.current.trim();
-    const result = await getPinStatus(host);
-    if (result === 'set') {
-      setConfigUnlockPin('');
-      setConfigPinError('');
-      return;
-    }
-    setConfigLocked(false);
-  };
-
-  const handleConfigPinSubmit = async () => {
-    const host = serverHostRef.current.trim();
-    const result = await verifyPin(host, configUnlockPin);
-    if (result === 'ok') {
-      setConfigLocked(false);
-      setConfigUnlockPin('');
-      setConfigPinError('');
-    } else if (result === 'wrong') {
-      setConfigPinError('PIN 错误');
-    } else {
-      setConfigPinError('无法连接到服务器，请检查服务器地址');
-    }
-  };
-
-  const handleConfigLock = () => {
-    setConfigLocked(true);
-    setConfigUnlockPin('');
-    setConfigPinError('');
-  };
 
   const handleEnableAudio = async () => {
     setAudioUnlocked(true);
@@ -462,67 +434,45 @@ export function ReceiverPage() {
 
             <div className="settings-section">
               <h4>连接设置</h4>
-              {configLocked ? (
-                <div className="config-unlock-row">
-                  <input
-                    type="password"
-                    className="config-pin-input"
-                    placeholder="输入 PIN 解锁"
-                    value={configUnlockPin}
-                    onChange={(e) => {
-                      setConfigUnlockPin(e.target.value);
-                      setConfigPinError('');
-                    }}
-                    onKeyDown={(e) => e.key === 'Enter' && handleConfigPinSubmit()}
-                  />
-                  <button className="config-unlock-btn" onClick={handleConfigPinSubmit}>解锁</button>
-                  {configPinError && <div className="config-pin-error">{configPinError}</div>}
-                </div>
-              ) : (
-                <button className="config-lock-btn" onClick={handleConfigLock}>锁定</button>
-              )}
-
               <label className="config-label">
                 服务器地址
-                <input
+                  <input
                   type="text"
-                  className={`config-input ${configLocked ? 'locked' : ''}`}
                   placeholder="留空=本机"
                   value={serverHost}
-                  onChange={(e) => {
+                    onChange={(e) => {
                     setServerHost(e.target.value);
                     electronApi.saveConfig({ serverHost: e.target.value });
-                  }}
-                  disabled={configLocked}
-                />
+                    }}
+                  />
               </label>
 
               <label className="config-label">
                 频道 (班级 ID)
                 <input
                   type="text"
-                  className={`config-input ${configLocked ? 'locked' : ''}`}
                   placeholder="输入班级 ID"
                   value={classId}
                   onChange={(e) => setClassId(e.target.value)}
-                  disabled={configLocked}
                 />
               </label>
 
-              {!configLocked && (
-                <button className="config-reconnect-btn" onClick={handleConnect} disabled={status === 'connecting'}>
-                  {status === 'connecting' ? '...' : '重新连接'}
-                </button>
-              )}
+              <button className="config-reconnect-btn" onClick={handleConnect} disabled={status === 'connecting'}>
+                {status === 'connecting' ? '...' : '重新连接'}
+              </button>
             </div>
 
             <div className="settings-section">
               <h4>TTS 设置</h4>
+              {status !== 'connected' && (
+                <div className="settings-locked-hint">连接服务器后可编辑 TTS 设置</div>
+              )}
               <label>
                 语音
                 <select
                   value={ttsSettings.voiceName || ''}
                   onChange={(e) => setTtsSettings((p) => ({ ...p, voiceName: e.target.value || null }))}
+                  disabled={status !== 'connected'}
                 >
                   <option value="">默认</option>
                   {voices
@@ -537,7 +487,7 @@ export function ReceiverPage() {
                 语速: {ttsSettings.rate.toFixed(1)}
                 <div className="range-row">
                   <span>0.5</span>
-                  <input type="range" min="0.5" max="2" step="0.1" value={ttsSettings.rate} onChange={(e) => setTtsSettings((p) => ({ ...p, rate: parseFloat(e.target.value) }))} />
+                  <input type="range" min="0.5" max="2" step="0.1" value={ttsSettings.rate} onChange={(e) => setTtsSettings((p) => ({ ...p, rate: parseFloat(e.target.value) }))} disabled={status !== 'connected'} />
                   <span>2.0</span>
                 </div>
               </label>
@@ -546,7 +496,7 @@ export function ReceiverPage() {
                 重复次数: {ttsSettings.repeat}
                 <div className="range-row">
                   <span>1</span>
-                  <input type="range" min="1" max="5" step="1" value={ttsSettings.repeat} onChange={(e) => setTtsSettings((p) => ({ ...p, repeat: parseInt(e.target.value) }))} />
+                  <input type="range" min="1" max="5" step="1" value={ttsSettings.repeat} onChange={(e) => setTtsSettings((p) => ({ ...p, repeat: parseInt(e.target.value) }))} disabled={status !== 'connected'} />
                   <span>5</span>
                 </div>
               </label>
@@ -561,12 +511,13 @@ export function ReceiverPage() {
                     setReceiverNickname(e.target.value);
                     localStorage.setItem('classroom-receiver-nickname', e.target.value);
                   }}
+                  disabled={status !== 'connected'}
                 />
               </label>
 
               <div className="settings-actions">
-                <button className="test-btn" onClick={handleTestSpeak}>测试朗读</button>
-                <button className="save-btn" onClick={handleSaveSettings}>保存设置</button>
+                <button className="test-btn" onClick={handleTestSpeak} disabled={status !== 'connected'}>测试朗读</button>
+                <button className="save-btn" onClick={handleSaveSettings} disabled={status !== 'connected'}>保存设置</button>
               </div>
             </div>
           </div>
