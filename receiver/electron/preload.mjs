@@ -22,4 +22,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openWhiteboard: () => ipcRenderer.invoke('open-whiteboard-overlay'),
   captureScreen: () => ipcRenderer.invoke('capture-screen'),
   closeWhiteboard: () => ipcRenderer.invoke('close-whiteboard-overlay'),
+  openSeatingChart: (layout) => ipcRenderer.invoke('open-seating-chart', layout),
+  closeSeatingChart: () => ipcRenderer.invoke('close-seating-chart'),
+  onSeatingUpdate: (callback) => {
+    ipcRenderer.on('seating-update', (_event, layout) => callback(layout));
+  },
 });

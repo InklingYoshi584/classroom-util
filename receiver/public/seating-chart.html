@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>座位表</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-app-region: drag;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #container {
+    display: flex;
+    flex-direction: column;
+    background: rgba(31, 41, 55, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 12px 14px;
+    min-width: 200px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    -webkit-app-region: no-drag;
+  }
+
+  #title {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  #title .label { flex: 1; }
+
+  #closeBtn {
+    width: 22px; height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    -webkit-app-region: no-drag;
+  }
+
+  #closeBtn:hover {
+    background: rgba(239, 68, 68, 0.4);
+    color: #fff;
+  }
+
+  #grid {
+    display: grid;
+    gap: 3px;
+    -webkit-app-region: no-drag;
+  }
+
+  .seat-cell {
+    width: 40px;
+    height: 28px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .seat-cell.occupied {
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    color: #93c5fd;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div id="container">
+  <div id="title">
+    <span class="label">座位表</span>
+    <button id="closeBtn" title="关闭">&#10005;</button>
+  </div>
+  <div id="grid"></div>
+</div>
+
+<script>
+(function() {
+  var gridEl = document.getElementById('grid');
+  var closeBtn = document.getElementById('closeBtn');
+  var currentLayout = null;
+
+  closeBtn.addEventListener('click', function() {
+    if (window.electronAPI) window.electronAPI.closeSeatingChart();
+  });
+
+  function renderSeating(layout) {
+    if (!layout) return;
+    currentLayout = layout;
+    gridEl.style.gridTemplateColumns = 'repeat(' + layout.cols + ', 1fr)';
+    gridEl.innerHTML = '';
+
+    var seats = layout.seats || {};
+    for (var r = 0; r < layout.rows; r++) {
+      for (var c = 0; c < layout.cols; c++) {
+        var key = r + '-' + c;
+        var name = seats[key] || null;
+        var cell = document.createElement('div');
+        cell.className = 'seat-cell' + (name ? ' occupied' : '');
+        cell.textContent = name || '';
+        cell.title = name || '';
+        gridEl.appendChild(cell);
+      }
+    }
+  }
+
+  // IPC listener for updates
+  if (window.electronAPI && window.electronAPI.onSeatingUpdate) {
+    window.electronAPI.onSeatingUpdate(function(layout) {
+      renderSeating(layout);
+    });
+  }
+})();
+</script>
+</body>
+</html>

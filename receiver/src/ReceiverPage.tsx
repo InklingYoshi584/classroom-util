@@ -28,6 +28,7 @@ export function ReceiverPage() {
   const [receiverNickname, setReceiverNickname] = useState(() => localStorage.getItem('classroom-receiver-nickname') || '');
   const [timerWindowOpen, setTimerWindowOpen] = useState(false);
   const [showConnectOverlay, setShowConnectOverlay] = useState(true);
+  const [seatingLayout, setSeatingLayout] = useState<object | null>(null);
 
   const popupTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const scheduleActiveRef = useRef(false);
@@ -79,6 +80,10 @@ export function ReceiverPage() {
         const historyEntry: CallMessage = { type: 'call-student', id: msg.id, name: callText, message: callText, time: msg.time, timestamp: msg.timestamp };
         setCurrentCall(historyEntry);
         setHistory((h) => [historyEntry, ...h].slice(0, 50));
+      }
+      if (msg.type === 'seat-update') {
+        setSeatingLayout(msg.seating);
+        electronApi.openSeatingChart(msg.seating);
       }
     });
 
@@ -363,6 +368,11 @@ export function ReceiverPage() {
             <button className="homework-btn" onClick={() => electronApi.openHomeworkWindow(classIdTrimmed, serverHost.trim())}>
               作业
             </button>
+            {seatingLayout && (
+              <button className="seating-reopen-btn" onClick={() => electronApi.openSeatingChart(seatingLayout)}>
+                &#x1F91F; 座位表
+              </button>
+            )}
           </div>
 
           {schedule.length > 0 && (

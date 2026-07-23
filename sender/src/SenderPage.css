@@ -1415,3 +1415,57 @@
 .student-card-settings .actions .delete-btn:hover {
   background: var(--danger-lighter);
 }
+
+/* ── Tools section ── */
+.tools-section {
+  padding: 16px 20px;
+}
+
+.tools-section h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.tool-cards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 160px;
+  padding: 20px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--btn-bg);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tool-card:hover {
+  border-color: var(--primary);
+  background: var(--btn-hover-bg);
+}
+
+.tool-card-icon {
+  font-size: 2rem;
+}
+
+.tool-card-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tool-card-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.3;
+}

@@ -30,7 +30,14 @@ export interface CallSenderMessage {
   classId?: string;
 }
 
-export type MqttMessage = CallMessage | HwSyncMessage | CallSenderMessage;
+export interface SeatUpdateMessage {
+  type: 'seat-update';
+  classId: string;
+  seating: object;
+  timestamp: number;
+}
+
+export type MqttMessage = CallMessage | HwSyncMessage | CallSenderMessage | SeatUpdateMessage;
 
 type MessageHandler = (msg: MqttMessage) => void;
 type StatusHandler = (status: MqttStatus) => void;

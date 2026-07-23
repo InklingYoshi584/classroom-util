@@ -6,6 +6,7 @@ import { getPinStatus, verifyPin, setPin, removePin, listPins } from './lib/pin'
 import { parseStudentCsv } from './lib/csv';
 import { searchStudents, toPinyin } from './lib/pinyin-search';
 import { HomeworkTracker } from './HomeworkTracker';
+import { SeatingChart, SeatLayout } from './SeatingChart';
 import './SenderPage.css';
 
 export function SenderPage() {
@@ -29,7 +30,7 @@ export function SenderPage() {
   const [sudoNewPin, setSudoNewPin] = useState('');
   const [sudoError, setSudoError] = useState('');
   const [pinList, setPinList] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'custom' | 'homework'>('custom');
+  const [activeTab, setActiveTab] = useState<'custom' | 'homework' | 'tools'>('custom');
   const [customText, setCustomText] = useState('');
   const [adminAuthed, setAdminAuthed] = useState(false);
   const [adminPin, setAdminPin] = useState('');
@@ -42,6 +43,7 @@ export function SenderPage() {
   // ── New state for custom message flow ──
   const [savedTemplates, setSavedTemplates] = useState<string[]>(() => loadSavedTemplates());
   const [showStudentPicker, setShowStudentPicker] = useState(false);
+  const [showSeatingChart, setShowSeatingChart] = useState(false);
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
   const [studentPickerMode, setStudentPickerMode] = useState<'insert' | 'send'>('insert');
   const [pendingTemplate, setPendingTemplate] = useState<string | null>(null);
@@ -378,6 +380,24 @@ export function SenderPage() {
     setAdminAuthed(false);
     setAdminPin('');
     setAdminPinError('');
+  };
+
+  const handlePublishSeating = async (layout: SeatLayout) => {
+    try {
+      await fetch('/api/seating/set', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ class: connectedClass, seating: layout }),
+      });
+    } catch {}
+    mqttRef.current?.publish({
+      type: 'seat-update',
+      classId: connectedClass,
+      seating: layout,
+      timestamp: Date.now(),
+    });
+    setShowSeatingChart(false);
+    setToast({ msg: '座位表已发布' });
   };
 
   const isAdmin = adminAuthed || sudoAuthed;
@@ -804,6 +824,12 @@ export function SenderPage() {
             >
               作业
             </button>
+            <button
+              className={`tab-btn ${activeTab === 'tools' ? 'active' : ''}`}
+              onClick={() => setActiveTab('tools')}
+            >
+              其他工具
+            </button>
           </div>
 
           {activeTab === 'homework' ? (
@@ -815,6 +841,17 @@ export function SenderPage() {
                 mqttRef.current?.publish({ type: 'hw-sync', classId: connectedClass, timestamp: Date.now() });
               }}
             />
+          ) : activeTab === 'tools' ? (
+            <div className="tools-section">
+              <h3>其他工具</h3>
+              <div className="tool-cards">
+                <button className="tool-card" onClick={() => setShowSeatingChart(true)}>
+                  <span className="tool-card-icon">&#x1F91F;</span>
+                  <span className="tool-card-label">座位表</span>
+                  <span className="tool-card-desc">拖拽安排学生座位，发布到接收端</span>
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="custom-message-section">
               <textarea
@@ -869,6 +906,15 @@ export function SenderPage() {
             </div>
           )}
         </>
+      )}
+
+      {showSeatingChart && (
+        <SeatingChart
+          students={students}
+          classId={connectedClass}
+          onPublish={handlePublishSeating}
+          onClose={() => setShowSeatingChart(false)}
+        />
       )}
 
       {history.length > 0 && (

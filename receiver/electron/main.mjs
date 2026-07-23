@@ -196,6 +196,52 @@ ipcMain.handle('close-homework-window', () => {
   return { ok: true };
 });
 
+// ── Seating chart window state ──
+let seatingChartWindow = null;
+
+function createSeatingChartWindow(layout) {
+  if (seatingChartWindow && !seatingChartWindow.isDestroyed()) {
+    seatingChartWindow.focus();
+    seatingChartWindow.webContents.send('seating-update', layout);
+    return;
+  }
+  const { workArea } = screen.getPrimaryDisplay();
+  seatingChartWindow = new BrowserWindow({
+    x: workArea.x + workArea.width - 320,
+    y: workArea.y + workArea.height - 280,
+    width: 300,
+    height: 260,
+    frame: false,
+    alwaysOnTop: false,
+    resizable: false,
+    skipTaskbar: true,
+    transparent: true,
+    title: '座位表',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.cjs'),
+    },
+  });
+  seatingChartWindow.loadFile(path.join(__dirname, '..', 'dist', 'seating-chart.html'));
+  seatingChartWindow.webContents.on('did-finish-load', () => {
+    seatingChartWindow?.webContents.send('seating-update', layout);
+  });
+  seatingChartWindow.on('closed', () => { seatingChartWindow = null; });
+}
+
+ipcMain.handle('open-seating-chart', (_event, layout) => {
+  createSeatingChartWindow(layout);
+  return { ok: true };
+});
+
+ipcMain.handle('close-seating-chart', () => {
+  if (seatingChartWindow && !seatingChartWindow.isDestroyed()) {
+    seatingChartWindow.close();
+  }
+  return { ok: true };
+});
+
 ipcMain.handle('load-receiver-config', () => loadConfig());
 
 ipcMain.handle('save-receiver-config', (_event, config) => saveConfig(config));

@@ -40,8 +40,10 @@ function saveData(data) {
     console.error('[DATA] Failed to save:', e.message);
   }
 }
+const seatingMap = persisted.seating || {}; // classId -> SeatLayout
+
 function persist() {
-  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule, messageCache });
+  saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule, messageCache, seating: seatingMap });
 }
 
 // ── Daily homework file helpers ──
@@ -251,6 +253,23 @@ app.post('/api/schedule/set', (req, res) => {
   globalSchedule = schedule;
   persist();
   console.log(`[DATA] schedule: ${schedule.length} slots`);
+  res.json({ ok: true });
+});
+
+// ── Seating chart API ──
+app.get('/api/seating', (req, res) => {
+  const cls = req.query.class || '';
+  res.json({ seating: seatingMap[cls] || null });
+});
+
+app.post('/api/seating/set', (req, res) => {
+  const { class: cls, seating } = req.body || {};
+  if (!cls || typeof seating !== 'object') {
+    return res.status(400).json({ ok: false, error: '参数错误' });
+  }
+  seatingMap[cls] = seating;
+  persist();
+  console.log(`[DATA] seating for ${cls}: saved`);
   res.json({ ok: true });
 });
 
