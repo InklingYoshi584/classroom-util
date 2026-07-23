@@ -391,9 +391,6 @@ export function ReceiverPage() {
             <button className="homework-btn" onClick={() => electronApi.openHomeworkWindow(classIdTrimmed, serverHost.trim())}>
               作业
             </button>
-            <button className="whiteboard-btn" onClick={() => electronApi.openWhiteboard()}>
-              白板
-            </button>
           </div>
 
           {schedule.length > 0 && (
@@ -522,16 +519,6 @@ export function ReceiverPage() {
             <div className="settings-section">
               <h4>TTS 设置</h4>
               <label>
-                朗读模板
-                <span className="vars">变量: {'{name}'} {'{message}'} {'{time}'}</span>
-                <input
-                  type="text"
-                  value={ttsSettings.template}
-                  onChange={(e) => setTtsSettings((p) => ({ ...p, template: e.target.value }))}
-                />
-              </label>
-
-              <label>
                 语音
                 <select
                   value={ttsSettings.voiceName || ''}
@@ -556,15 +543,6 @@ export function ReceiverPage() {
               </label>
 
               <label>
-                音量: {ttsSettings.volume.toFixed(1)}
-                <div className="range-row">
-                  <span>0</span>
-                  <input type="range" min="0" max="1" step="0.1" value={ttsSettings.volume} onChange={(e) => setTtsSettings((p) => ({ ...p, volume: parseFloat(e.target.value) }))} />
-                  <span>1</span>
-                </div>
-              </label>
-
-              <label>
                 重复次数: {ttsSettings.repeat}
                 <div className="range-row">
                   <span>1</span>
@@ -572,10 +550,6 @@ export function ReceiverPage() {
                   <span>5</span>
                 </div>
               </label>
-
-              <div className="preview-text">
-                预览: {previewTemplate(ttsSettings.template || DEFAULT_TTS.template)}
-              </div>
 
               <label>
                 接收端昵称
