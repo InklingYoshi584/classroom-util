@@ -1,7 +1,7 @@
-/* ── Overlay ── */
+/* ── Dark theme baseline for seating chart overlay ── */
 .seating-overlay {
-  background: var(--bg, #1f2937);
-  border-radius: var(--radius, 12px);
+  background: #111827;
+  border-radius: 12px;
   width: 90vw;
   max-width: 1100px;
   height: 85vh;
@@ -9,6 +9,7 @@
   flex-direction: column;
   box-shadow: 0 8px 40px rgba(0,0,0,0.5);
   overflow: hidden;
+  color: #e5e7eb;
 }
 
 .seating-header {
@@ -16,14 +17,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   flex-shrink: 0;
 }
 
 .seating-header h3 {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--fg, #e5e7eb);
+  color: #e5e7eb;
   margin: 0;
 }
 
@@ -37,7 +38,7 @@
 .seating-left {
   width: 220px;
   flex-shrink: 0;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid rgba(255,255,255,0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -47,16 +48,16 @@
   margin: 12px;
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.12);
   background: rgba(255,255,255,0.06);
-  color: var(--fg, #e5e7eb);
+  color: #e5e7eb;
   font-size: 0.9rem;
   outline: none;
   flex-shrink: 0;
 }
 
 .seating-search:focus {
-  border-color: var(--primary, #3b82f6);
+  border-color: #3b82f6;
 }
 
 .seating-search::placeholder {
@@ -74,7 +75,7 @@
   margin: 2px 4px;
   border-radius: 6px;
   background: rgba(255,255,255,0.05);
-  color: var(--fg, #e5e7eb);
+  color: #e5e7eb;
   font-size: 0.9rem;
   cursor: grab;
   user-select: none;
@@ -82,12 +83,12 @@
 }
 
 .seating-student-item:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.12);
 }
 
 .seating-student-item.dragging {
   opacity: 0.4;
-  background: var(--primary, #3b82f6);
+  background: #3b82f6;
 }
 
 .seating-empty-hint {
@@ -118,7 +119,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.5);
   font-size: 0.85rem;
 }
 
@@ -126,16 +127,16 @@
   width: 52px;
   padding: 4px 8px;
   border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.06);
-  color: var(--fg, #e5e7eb);
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #e5e7eb;
   font-size: 0.85rem;
   text-align: center;
   outline: none;
 }
 
 .seating-grid-config input:focus {
-  border-color: var(--primary, #3b82f6);
+  border-color: #3b82f6;
 }
 
 .seating-clear-btn {
@@ -144,7 +145,7 @@
   border: 1px solid rgba(255,255,255,0.15);
   border-radius: 6px;
   background: transparent;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.45);
   font-size: 0.8rem;
   cursor: pointer;
 }
@@ -166,7 +167,7 @@
 }
 
 .seating-cell {
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.05);
   border: 1px dashed rgba(255,255,255,0.1);
   border-radius: 6px;
   display: flex;
@@ -174,13 +175,13 @@
   justify-content: center;
   min-height: 48px;
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.25);
   transition: background 0.1s, border-color 0.1s;
   cursor: default;
 }
 
 .seating-cell.occupied {
-  background: rgba(59, 130, 246, 0.15);
+  background: rgba(59, 130, 246, 0.18);
   border: 1px solid rgba(59, 130, 246, 0.3);
   color: #93c5fd;
   font-weight: 600;
@@ -194,8 +195,8 @@
 }
 
 .seating-cell.drag-over {
-  background: rgba(59, 130, 246, 0.25);
-  border-color: var(--primary, #3b82f6);
+  background: rgba(59, 130, 246, 0.3);
+  border-color: #3b82f6;
   border-style: solid;
 }
 
@@ -204,7 +205,7 @@
   display: flex;
   justify-content: flex-end;
   padding: 12px 20px;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid rgba(255,255,255,0.08);
   flex-shrink: 0;
 }
 
@@ -212,7 +213,7 @@
   padding: 8px 24px;
   border: none;
   border-radius: 8px;
-  background: var(--primary, #3b82f6);
+  background: #3b82f6;
   color: #fff;
   font-size: 0.95rem;
   font-weight: 600;
@@ -221,5 +222,5 @@
 }
 
 .seating-publish-btn:hover {
-  background: var(--primary-dark, #2563eb);
+  background: #2563eb;
 }
