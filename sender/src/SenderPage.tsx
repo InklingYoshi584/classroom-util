@@ -648,10 +648,8 @@ export function SenderPage() {
               <div className="schedule-import-row">
                 <textarea
                   className="schedule-textarea"
-                  rows={4}
-                  placeholder={`格式: 每行一个时间段 (可选: 学科, 教室)
-08:00-09:30 数学 302
-10:00-11:30 语文 305`}
+                  rows={3}
+                  placeholder={`格式: 每行一个时间段\n10:10-10:50\n13:30-15:00`}
                   value={scheduleText}
                   onChange={(e) => setScheduleText(e.target.value)}
                 />
@@ -680,20 +678,13 @@ export function SenderPage() {
                     const lines = scheduleText.split('\n')
                       .map((l) => l.trim())
                       .filter((l) => l.length > 0);
-                    const schedule: { start: string; end: string; subject?: string; room?: string }[] = [];
+                    const schedule: { start: string; end: string }[] = [];
                     const timeRe = /^\d{1,2}:\d{2}$/;
                     for (const line of lines) {
-                      const tokens = line.split(/\s+/);
-                      const timePart = tokens[0]?.replace(/[–—]/g, '-') || '';
-                      const parts = timePart.split('-');
+                      const parts = line.replace(/\s/g, '').replace(/[–—]/g, '-').split('-');
                       const zeroPad = (s: string) => s.padStart(5, '0');
                       if (parts.length === 2 && timeRe.test(parts[0]) && timeRe.test(parts[1])) {
-                        schedule.push({
-                          start: zeroPad(parts[0]),
-                          end: zeroPad(parts[1]),
-                          subject: tokens[1] || undefined,
-                          room: tokens[2] || undefined,
-                        });
+                        schedule.push({ start: zeroPad(parts[0]), end: zeroPad(parts[1]) });
                       }
                     }
                     if (schedule.length === 0 && lines.length > 0) {
