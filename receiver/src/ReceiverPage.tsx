@@ -23,13 +23,14 @@ export function ReceiverPage() {
   const [gatePinInput, setGatePinInput] = useState('');
   const [gatePinError, setGatePinError] = useState('');
   const [hwReloadTrigger, setHwReloadTrigger] = useState(0);
-  const [schedule, setSchedule] = useState<{ start: string; end: string }[]>([]);
+  const [schedule, setSchedule] = useState<{ start: string; end: string; subject?: string; room?: string }[]>([]);
   const [scheduleActive, setScheduleActive] = useState(false);
   const [receiverNickname, setReceiverNickname] = useState(() => localStorage.getItem('classroom-receiver-nickname') || '');
   const [timerWindowOpen, setTimerWindowOpen] = useState(false);
   const [showConnectOverlay, setShowConnectOverlay] = useState(true);
   const [seatingLayout, setSeatingLayout] = useState<object | null>(null);
   const [showToolsOverlay, setShowToolsOverlay] = useState(false);
+  const [showScheduleBoard, setShowScheduleBoard] = useState(false);
 
   const popupTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const scheduleActiveRef = useRef(false);
@@ -402,7 +403,7 @@ export function ReceiverPage() {
               <span className={scheduleActive ? 'schedule-active-badge' : 'schedule-idle-badge'}>
                 {scheduleActive ? '课堂中' : '休息中'}
               </span>
-              <span className="schedule-slots">{schedule.map((s) => `${s.start}-${s.end}`).join(' ')}</span>
+              <span className="schedule-slots">{schedule.map((s) => `${s.start}-${s.end}${s.subject ? ` ${s.subject}` : ''}`).join(' | ')}</span>
             </div>
           )}
 
@@ -598,6 +599,42 @@ export function ReceiverPage() {
                 <span className="tools-overlay-label">座位表</span>
                 <span className="tools-overlay-desc">查看班级座位布局</span>
               </button>
+              <button className="tools-overlay-card" onClick={() => { setShowToolsOverlay(false); setShowScheduleBoard(true); }}>
+                <span className="tools-overlay-icon">&#x1F4C5;</span>
+                <span className="tools-overlay-label">课表</span>
+                <span className="tools-overlay-desc">查看今日课程安排</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Schedule board overlay ── */}
+      {showScheduleBoard && (
+        <div className="overlay" onClick={() => setShowScheduleBoard(false)}>
+          <div className="schedule-board-overlay" onClick={(e) => e.stopPropagation()}>
+            <div className="schedule-board-header">
+              <h3>今日课表</h3>
+              <button className="close-btn" onClick={() => setShowScheduleBoard(false)}>&#10005;</button>
+            </div>
+            <div className="schedule-board-body">
+              {schedule.length === 0 ? (
+                <div className="schedule-board-empty">暂无课表，请在发送端 Sudo 模式下设置</div>
+              ) : (
+                schedule.map((s, i) => {
+                  const now = new Date();
+                  const current = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+                  const isActive = current >= s.start && current < s.end;
+                  const isPast = current >= s.end;
+                  return (
+                    <div key={i} className={`schedule-board-slot ${isActive ? 'active' : ''} ${isPast ? 'past' : ''}`}>
+                      <span className="schedule-board-time">{s.start} - {s.end}</span>
+                      {s.subject && <span className="schedule-board-subject">{s.subject}</span>}
+                      {s.room && <span className="schedule-board-room">{s.room}</span>}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
