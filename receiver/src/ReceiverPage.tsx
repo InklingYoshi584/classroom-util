@@ -370,7 +370,7 @@ export function ReceiverPage() {
             </button>
             {seatingLayout && (
               <button className="seating-reopen-btn" onClick={() => electronApi.openSeatingChart(seatingLayout)}>
-                &#x1F91F; 座位表
+                &#x1FA91; 座位表
               </button>
             )}
           </div>

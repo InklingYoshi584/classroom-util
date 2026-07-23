@@ -11,6 +11,7 @@ export interface SeatLayout {
 interface Props {
   students: string[];
   classId: string;
+  initial?: SeatLayout | null;
   onPublish: (layout: SeatLayout) => void;
   onClose: () => void;
 }
@@ -19,10 +20,10 @@ function cellKey(r: number, c: number) {
   return `${r}-${c}`;
 }
 
-export function SeatingChart({ students, classId, onPublish, onClose }: Props) {
-  const [rows, setRows] = useState(5);
-  const [cols, setCols] = useState(6);
-  const [seats, setSeats] = useState<Record<string, string | null>>({});
+export function SeatingChart({ students, classId, initial, onPublish, onClose }: Props) {
+  const [rows, setRows] = useState(initial?.rows ?? 5);
+  const [cols, setCols] = useState(initial?.cols ?? 6);
+  const [seats, setSeats] = useState<Record<string, string | null>>(initial?.seats ?? {});
   const [dragStudent, setDragStudent] = useState<string | null>(null);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
   const [search, setSearch] = useState('');

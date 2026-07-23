@@ -44,6 +44,7 @@ export function SenderPage() {
   const [savedTemplates, setSavedTemplates] = useState<string[]>(() => loadSavedTemplates());
   const [showStudentPicker, setShowStudentPicker] = useState(false);
   const [showSeatingChart, setShowSeatingChart] = useState(false);
+  const [seatingInitial, setSeatingInitial] = useState<SeatLayout | null>(null);
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
   const [studentPickerMode, setStudentPickerMode] = useState<'insert' | 'send'>('insert');
   const [pendingTemplate, setPendingTemplate] = useState<string | null>(null);
@@ -380,6 +381,17 @@ export function SenderPage() {
     setAdminAuthed(false);
     setAdminPin('');
     setAdminPinError('');
+  };
+
+  const handleOpenSeatingChart = async () => {
+    try {
+      const res = await fetch(`/api/seating?class=${encodeURIComponent(connectedClass)}`);
+      const data = await res.json();
+      setSeatingInitial(data.seating || null);
+    } catch {
+      setSeatingInitial(null);
+    }
+    setShowSeatingChart(true);
   };
 
   const handlePublishSeating = async (layout: SeatLayout) => {
@@ -845,8 +857,8 @@ export function SenderPage() {
             <div className="tools-section">
               <h3>其他工具</h3>
               <div className="tool-cards">
-                <button className="tool-card" onClick={() => setShowSeatingChart(true)}>
-                  <span className="tool-card-icon">&#x1F91F;</span>
+                <button className="tool-card" onClick={handleOpenSeatingChart}>
+                  <span className="tool-card-icon">&#x1FA91;</span>
                   <span className="tool-card-label">座位表</span>
                   <span className="tool-card-desc">拖拽安排学生座位，发布到接收端</span>
                 </button>
@@ -912,8 +924,9 @@ export function SenderPage() {
         <SeatingChart
           students={students}
           classId={connectedClass}
+          initial={seatingInitial}
           onPublish={handlePublishSeating}
-          onClose={() => setShowSeatingChart(false)}
+          onClose={() => { setShowSeatingChart(false); setSeatingInitial(null); }}
         />
       )}
 
