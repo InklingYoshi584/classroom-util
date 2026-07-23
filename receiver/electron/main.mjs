@@ -242,6 +242,52 @@ ipcMain.handle('close-seating-chart', () => {
   return { ok: true };
 });
 
+// ── Schedule window ──
+let scheduleWindow = null;
+
+function createScheduleWindow(periodConfig, classSchedule) {
+  if (scheduleWindow && !scheduleWindow.isDestroyed()) {
+    scheduleWindow.focus();
+    scheduleWindow.webContents.send('schedule-data', periodConfig, classSchedule);
+    return;
+  }
+  const { workArea } = screen.getPrimaryDisplay();
+  scheduleWindow = new BrowserWindow({
+    x: workArea.x + workArea.width - 340,
+    y: workArea.y + 60,
+    width: 320,
+    height: 440,
+    frame: false,
+    alwaysOnTop: false,
+    resizable: false,
+    skipTaskbar: true,
+    transparent: true,
+    title: '课表',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.cjs'),
+    },
+  });
+  scheduleWindow.loadFile(path.join(__dirname, '..', 'dist', 'schedule.html'));
+  scheduleWindow.webContents.on('did-finish-load', () => {
+    scheduleWindow?.webContents.send('schedule-data', periodConfig, classSchedule);
+  });
+  scheduleWindow.on('closed', () => { scheduleWindow = null; });
+}
+
+ipcMain.handle('open-schedule', (_event, periodConfig, classSchedule) => {
+  createScheduleWindow(periodConfig, classSchedule);
+  return { ok: true };
+});
+
+ipcMain.handle('close-schedule', () => {
+  if (scheduleWindow && !scheduleWindow.isDestroyed()) {
+    scheduleWindow.close();
+  }
+  return { ok: true };
+});
+
 ipcMain.handle('load-receiver-config', () => loadConfig());
 
 ipcMain.handle('save-receiver-config', (_event, config) => saveConfig(config));

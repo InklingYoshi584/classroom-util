@@ -302,7 +302,23 @@ export function ReceiverPage() {
         electronApi.openSeatingChart(layout);
       }
     } catch {
-      // no-op if fetch fails
+      // no-op
+    }
+  };
+
+  const handleOpenScheduleFromTools = async () => {
+    const host = serverHostRef.current.trim();
+    const cls = classId.trim();
+    try {
+      const apiBase = host ? `http://${host}:8787` : '';
+      const res = await fetch(`${apiBase}/api/schedule/config`);
+      const data = await res.json();
+      if (data.periodConfig) {
+        const sc = data.classSchedules?.[cls] || null;
+        electronApi.openSchedule(data.periodConfig, sc);
+      }
+    } catch {
+      // no-op
     }
   };
 
@@ -597,6 +613,11 @@ export function ReceiverPage() {
                 <span className="tools-overlay-icon">&#x1FA91;</span>
                 <span className="tools-overlay-label">座位表</span>
                 <span className="tools-overlay-desc">查看班级座位布局</span>
+              </button>
+              <button className="tools-overlay-card" onClick={() => { setShowToolsOverlay(false); handleOpenScheduleFromTools(); }}>
+                <span className="tools-overlay-icon">&#x1F4C5;</span>
+                <span className="tools-overlay-label">课表</span>
+                <span className="tools-overlay-desc">查看今日课程安排</span>
               </button>
             </div>
           </div>

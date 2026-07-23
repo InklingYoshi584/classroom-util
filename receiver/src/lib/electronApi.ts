@@ -19,6 +19,8 @@ interface ElectronHomeworkAPI {
   openWhiteboard: () => Promise<{ ok: boolean }>;
   openSeatingChart: (layout: object) => Promise<{ ok: boolean }>;
   closeSeatingChart: () => Promise<{ ok: boolean }>;
+  openSchedule: (pc: object, sc: object) => Promise<{ ok: boolean }>;
+  closeSchedule: () => Promise<{ ok: boolean }>;
   capturePage: () => Promise<{ ok: boolean; dataUrl?: string; error?: string }>;
   saveScreenshot: (dataUrl: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
 }
@@ -129,6 +131,14 @@ export const electronApi: ElectronHomeworkAPI = {
   },
   async closeSeatingChart() {
     if (window.electronAPI) return window.electronAPI.closeSeatingChart();
+    return { ok: false, error: 'Not running in Electron' };
+  },
+  async openSchedule(pc: object, sc: object) {
+    if (window.electronAPI) return window.electronAPI.openSchedule(pc, sc);
+    return { ok: false, error: 'Not running in Electron' };
+  },
+  async closeSchedule() {
+    if (window.electronAPI) return window.electronAPI.closeSchedule();
     return { ok: false, error: 'Not running in Electron' };
   },
 };

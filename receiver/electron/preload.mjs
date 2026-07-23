@@ -27,4 +27,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onSeatingUpdate: (callback) => {
     ipcRenderer.on('seating-update', (_event, layout) => callback(layout));
   },
+  openSchedule: (pc, sc) => ipcRenderer.invoke('open-schedule', pc, sc),
+  closeSchedule: () => ipcRenderer.invoke('close-schedule'),
+  onScheduleData: (callback) => {
+    ipcRenderer.on('schedule-data', (_event, pc, sc) => callback(pc, sc));
+  },
 });
