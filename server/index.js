@@ -40,8 +40,6 @@ function saveData(data) {
     console.error('[DATA] Failed to save:', e.message);
   }
 }
-const seatingMap = persisted.seating || {}; // classId -> SeatLayout
-
 function persist() {
   saveData({ pins: [...pinSet], students: studentsMap, schedules: globalSchedule, messageCache, seating: seatingMap });
 }
@@ -86,6 +84,7 @@ const pinSet = new Set(persisted.pins || []);
 const studentsMap = persisted.students || {};
 let globalSchedule = persisted.schedules || [];
 const messageCache = persisted.messageCache || {}; // classId -> messages[]
+const seatingMap = persisted.seating || {}; // classId -> SeatLayout
 
 // ── Auto-migrate legacy hwData from data.json to daily files ──
 if (persisted.hwData && Object.keys(persisted.hwData).length > 0) {
