@@ -255,23 +255,23 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
         {step === 'grid' && periodConfig && (
           <div className="sch-grid-wrap">
             <div className="sch-toolbar">
+              {!clipMode && (
+                <>
+                  <span className="sch-toolbar-hint">点击格子直接编辑课程名</span>
+                  <button className="sch-toolbar-btn" onClick={handleEnterCopyMode}>复制</button>
+                  {pasteSlot && <button className="sch-toolbar-btn paste" onClick={handleEnterPasteMode}>粘贴已复制的内容</button>}
+                </>
+              )}
               {clipMode === 'copy' && (
                 <>
-                  <span className="sch-toolbar-label">复制模式: 点击格子复制课程名</span>
+                  <span className="sch-toolbar-label">复制模式 — 点击已填课程格子进行复制</span>
                   <button className="sch-toolbar-btn cancel" onClick={handleCancelClipMode}>取消</button>
                 </>
               )}
               {clipMode === 'paste' && (
                 <>
-                  <span className="sch-toolbar-label">已复制: <strong>{pasteSlot}</strong></span>
+                  <span className="sch-toolbar-label">粘贴模式 — 已复制 <strong>{pasteSlot}</strong>，点击任意格子粘贴</span>
                   <button className="sch-toolbar-btn cancel" onClick={handleCancelClipMode}>取消</button>
-                </>
-              )}
-              {!clipMode && (
-                <>
-                  <span className="sch-toolbar-hint">点击格子直接编辑课程名</span>
-                  <button className="sch-toolbar-btn" onClick={handleEnterCopyMode}>复制</button>
-                  {pasteSlot && <button className="sch-toolbar-btn paste" onClick={handleEnterPasteMode}>粘贴</button>}
                 </>
               )}
             </div>
@@ -316,6 +316,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
                             className="sch-cell-input"
                             placeholder=""
                             onClick={e => e.stopPropagation()}
+                            readOnly={!!clipMode}
                           />
                         </td>
                       );
