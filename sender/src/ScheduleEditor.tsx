@@ -49,7 +49,8 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
     mon: [], tue: [], wed: [], thu: [], fri: [],
   }));
   const [pasteSlot, setPasteSlot] = useState<string | null>(null);
-  const [copiedFrom, setCopiedFrom] = useState<string | null>(null); // day-period key
+  const [copiedFrom, setCopiedFrom] = useState<string | null>(null);
+  const [clipMode, setClipMode] = useState<'copy' | 'paste' | null>(null); // day-period key
   const [saving, setSaving] = useState(false);
 
   // Config step fields
@@ -161,22 +162,32 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
     });
   };
 
-  const handlePasteClick = (day: string, periodIdx: number) => {
-    if (!pasteSlot) {
+  const handleCellClick = (day: string, periodIdx: number) => {
+    if (clipMode === 'copy') {
       const arr = classSchedule[day as keyof ClassSchedule] as (string | null)[];
       const name = arr[periodIdx] || '';
       if (name) {
         setPasteSlot(name);
         setCopiedFrom(`${day}-${periodIdx}`);
+        setClipMode('paste');
       }
-    } else {
+    } else if (clipMode === 'paste' && pasteSlot) {
       handleCourseChange(day, periodIdx, pasteSlot);
-      setPasteSlot(null);
-      setCopiedFrom(null);
     }
   };
 
-  const handleCancelPaste = () => {
+  const handleEnterCopyMode = () => {
+    setClipMode('copy');
+    setPasteSlot(null);
+    setCopiedFrom(null);
+  };
+
+  const handleEnterPasteMode = () => {
+    if (pasteSlot) setClipMode('paste');
+  };
+
+  const handleCancelClipMode = () => {
+    setClipMode(null);
     setPasteSlot(null);
     setCopiedFrom(null);
   };
@@ -244,14 +255,24 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
         {step === 'grid' && periodConfig && (
           <div className="sch-grid-wrap">
             <div className="sch-toolbar">
-              {pasteSlot ? (
+              {clipMode === 'copy' && (
+                <>
+                  <span className="sch-toolbar-label">复制模式: 点击格子复制课程名</span>
+                  <button className="sch-toolbar-btn cancel" onClick={handleCancelClipMode}>取消</button>
+                </>
+              )}
+              {clipMode === 'paste' && (
                 <>
                   <span className="sch-toolbar-label">已复制: <strong>{pasteSlot}</strong></span>
-                  <button className="sch-toolbar-btn paste" disabled>粘贴</button>
-                  <button className="sch-toolbar-btn cancel" onClick={handleCancelPaste}>取消</button>
+                  <button className="sch-toolbar-btn cancel" onClick={handleCancelClipMode}>取消</button>
                 </>
-              ) : (
-                <span className="sch-toolbar-hint">点击已填格子复制课程名，再点其他格子粘贴</span>
+              )}
+              {!clipMode && (
+                <>
+                  <span className="sch-toolbar-hint">点击格子直接编辑课程名</span>
+                  <button className="sch-toolbar-btn" onClick={handleEnterCopyMode}>复制</button>
+                  {pasteSlot && <button className="sch-toolbar-btn paste" onClick={handleEnterPasteMode}>粘贴</button>}
+                </>
               )}
             </div>
             <table className="sch-grid">
@@ -282,24 +303,20 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
                     {DAYS.map(d => {
                       const arr = (classSchedule[d] as (string | null)[]) || [];
                       const name = arr[i] || '';
-                      const isPasteTarget = !!pasteSlot;
+                      const isClipTarget = clipMode === 'copy' || (clipMode === 'paste' && !!pasteSlot);
                       return (
                         <td
                           key={d}
-                          className={`sch-cell ${name ? 'filled' : ''} ${isPasteTarget ? 'paste-target' : ''}`}
-                          onClick={() => handlePasteClick(d, i)}
+                          className={`sch-cell ${name ? 'filled' : ''} ${isClipTarget ? 'clip-target' : ''}`}
+                          onClick={() => handleCellClick(d, i)}
                         >
-                          {isPasteTarget ? (
-                            <span className="sch-cell-hint">粘贴</span>
-                          ) : (
-                            <input
-                              value={name}
-                              onChange={e => handleCourseChange(d, i, e.target.value)}
-                              className="sch-cell-input"
-                              placeholder=""
-                              onClick={e => e.stopPropagation()}
-                            />
-                          )}
+                          <input
+                            value={name}
+                            onChange={e => handleCourseChange(d, i, e.target.value)}
+                            className="sch-cell-input"
+                            placeholder=""
+                            onClick={e => e.stopPropagation()}
+                          />
                         </td>
                       );
                     })}

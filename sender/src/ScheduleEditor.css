@@ -198,12 +198,13 @@
   background: rgba(255,255,255,0.04);
 }
 
-.sch-cell.paste-target {
-  background: rgba(59,130,246,0.08);
+.sch-cell.clip-target {
+  background: rgba(59,130,246,0.06);
+  cursor: copy;
 }
 
-.sch-cell.paste-target:hover {
-  background: rgba(59,130,246,0.15);
+.sch-cell.clip-target:hover {
+  background: rgba(59,130,246,0.12);
 }
 
 .sch-cell.filled {
