@@ -26,7 +26,6 @@
   margin: 0;
 }
 
-/* Config step */
 .sch-config {
   padding: 24px 20px;
   display: flex;
@@ -79,7 +78,6 @@
   text-align: center;
 }
 
-/* Grid */
 .sch-grid-wrap {
   flex: 1;
   overflow: auto;
@@ -120,7 +118,6 @@
   color: #e5e7eb;
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.1s;
 }
 
 .sch-toolbar-btn:hover {
@@ -128,22 +125,18 @@
 }
 
 .sch-toolbar-btn.paste {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.35);
+  background: rgba(59,130,246,0.2);
+  border-color: rgba(59,130,246,0.35);
   color: #93c5fd;
 }
 
 .sch-toolbar-btn.paste:hover {
-  background: rgba(59, 130, 246, 0.3);
+  background: rgba(59,130,246,0.3);
 }
 
 .sch-toolbar-btn.cancel {
   border-color: rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.4);
-}
-
-.sch-paste-banner {
-  display: none;
 }
 
 .sch-grid {
@@ -160,7 +153,9 @@
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-.sch-grid th:first-child { width: 120px; }
+.sch-grid th:first-child {
+  width: 120px;
+}
 
 .sch-time-cell {
   display: flex;
@@ -196,7 +191,6 @@
   padding: 4px;
   border-bottom: 1px solid rgba(255,255,255,0.04);
   cursor: pointer;
-  transition: background 0.1s;
   min-height: 36px;
 }
 
@@ -205,19 +199,19 @@
 }
 
 .sch-cell.paste-target {
-  background: rgba(59, 130, 246, 0.08);
+  background: rgba(59,130,246,0.08);
 }
 
 .sch-cell.paste-target:hover {
-  background: rgba(59, 130, 246, 0.15);
+  background: rgba(59,130,246,0.15);
 }
 
 .sch-cell.filled {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(59,130,246,0.1);
 }
 
 .sch-cell.filled:hover {
-  background: rgba(59, 130, 246, 0.18);
+  background: rgba(59,130,246,0.18);
 }
 
 .sch-cell-input {
@@ -243,7 +237,6 @@
   color: rgba(255,255,255,0.25);
 }
 
-/* Footer */
 .sch-footer {
   display: flex;
   justify-content: flex-end;
@@ -259,7 +252,6 @@
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .sch-save-btn:hover {
