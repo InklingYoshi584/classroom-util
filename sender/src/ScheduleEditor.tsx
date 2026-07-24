@@ -310,14 +310,17 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
                           className={`sch-cell ${name ? 'filled' : ''} ${isClipTarget ? 'clip-target' : ''}`}
                           onClick={() => handleCellClick(d, i)}
                         >
-                          <input
-                            value={name}
-                            onChange={e => handleCourseChange(d, i, e.target.value)}
-                            className="sch-cell-input"
-                            placeholder=""
-                            onClick={e => e.stopPropagation()}
-                            readOnly={!!clipMode}
-                          />
+                          {clipMode ? (
+                            <span className={`sch-cell-text ${name ? '' : 'empty'}`}>{name || '—'}</span>
+                          ) : (
+                            <input
+                              value={name}
+                              onChange={e => handleCourseChange(d, i, e.target.value)}
+                              className="sch-cell-input"
+                              placeholder=""
+                              onClick={e => e.stopPropagation()}
+                            />
+                          )}
                         </td>
                       );
                     })}

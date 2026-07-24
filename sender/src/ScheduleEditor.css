@@ -238,6 +238,21 @@
   color: rgba(255,255,255,0.25);
 }
 
+.sch-cell-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #93c5fd;
+}
+
+.sch-cell-text.empty {
+  color: rgba(255,255,255,0.12);
+}
+
 .sch-footer {
   display: flex;
   justify-content: flex-end;
