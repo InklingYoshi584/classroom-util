@@ -49,6 +49,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
     mon: [], tue: [], wed: [], thu: [], fri: [],
   }));
   const [pasteSlot, setPasteSlot] = useState<string | null>(null);
+  const [copiedFrom, setCopiedFrom] = useState<string | null>(null); // day-period key
   const [saving, setSaving] = useState(false);
 
   // Config step fields
@@ -164,11 +165,20 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
     if (!pasteSlot) {
       const arr = classSchedule[day as keyof ClassSchedule] as (string | null)[];
       const name = arr[periodIdx] || '';
-      if (name) setPasteSlot(name);
+      if (name) {
+        setPasteSlot(name);
+        setCopiedFrom(`${day}-${periodIdx}`);
+      }
     } else {
       handleCourseChange(day, periodIdx, pasteSlot);
       setPasteSlot(null);
+      setCopiedFrom(null);
     }
+  };
+
+  const handleCancelPaste = () => {
+    setPasteSlot(null);
+    setCopiedFrom(null);
   };
 
   const handleSave = async () => {
@@ -233,12 +243,17 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
 
         {step === 'grid' && periodConfig && (
           <div className="sch-grid-wrap">
-            {pasteSlot && (
-              <div className="sch-paste-banner">
-                粘贴模式: <strong>{pasteSlot}</strong>
-                <button onClick={() => setPasteSlot(null)}>取消</button>
-              </div>
-            )}
+            <div className="sch-toolbar">
+              {pasteSlot ? (
+                <>
+                  <span className="sch-toolbar-label">已复制: <strong>{pasteSlot}</strong></span>
+                  <button className="sch-toolbar-btn paste" disabled>粘贴</button>
+                  <button className="sch-toolbar-btn cancel" onClick={handleCancelPaste}>取消</button>
+                </>
+              ) : (
+                <span className="sch-toolbar-hint">点击已填格子复制课程名，再点其他格子粘贴</span>
+              )}
+            </div>
             <table className="sch-grid">
               <thead>
                 <tr>
