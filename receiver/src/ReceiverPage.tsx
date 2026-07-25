@@ -313,10 +313,9 @@ export function ReceiverPage() {
       const apiBase = host ? `http://${host}:8787` : '';
       const res = await fetch(`${apiBase}/api/schedule/config`);
       const data = await res.json();
-      if (data.periodConfig) {
-        const sc = data.classSchedules?.[cls] || null;
-        electronApi.openSchedule(data.periodConfig, sc);
-      }
+      const pc = data.periodConfig || null;
+      const sc = data.classSchedules?.[cls] || null;
+      electronApi.openSchedule(pc, sc);
     } catch {
       // no-op
     }
@@ -397,17 +396,9 @@ export function ReceiverPage() {
             <button className="settings-toggle-btn" onClick={handleToggleSettings}>
               设置
             </button>
-            <button className="timer-btn" onClick={handleOpenTimer} title="计时器 / 时钟">
-              ⏱️ 计时器
-            </button>
             <button className="homework-btn" onClick={() => electronApi.openHomeworkWindow(classIdTrimmed, serverHost.trim())}>
               作业
             </button>
-            {seatingLayout && (
-              <button className="seating-reopen-btn" onClick={() => electronApi.openSeatingChart(seatingLayout)}>
-                &#x1FA91; 座位表
-              </button>
-            )}
             <button className="tools-open-btn" onClick={() => setShowToolsOverlay(true)}>
               工具
             </button>
@@ -609,6 +600,11 @@ export function ReceiverPage() {
               <button className="close-btn" onClick={() => setShowToolsOverlay(false)}>&#10005;</button>
             </div>
             <div className="tools-overlay-grid">
+              <button className="tools-overlay-card" onClick={() => { setShowToolsOverlay(false); handleOpenTimer(); }}>
+                <span className="tools-overlay-icon">&#x23F1;</span>
+                <span className="tools-overlay-label">计时器</span>
+                <span className="tools-overlay-desc">时钟 / 倒计时</span>
+              </button>
               <button className="tools-overlay-card" onClick={handleOpenSeatingFromTools}>
                 <span className="tools-overlay-icon">&#x1FA91;</span>
                 <span className="tools-overlay-label">座位表</span>
