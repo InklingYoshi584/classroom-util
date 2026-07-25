@@ -92,7 +92,8 @@
   margin-bottom: 10px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 6px;
   font-size: 0.85rem;
   min-height: 40px;
 }
@@ -100,6 +101,20 @@
 .sch-toolbar-hint {
   color: rgba(255,255,255,0.3);
   font-size: 0.8rem;
+}
+
+.sch-toolbar-btns {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.sch-toolbar-sub {
+  display: block;
+  width: 100%;
+  color: rgba(255,255,255,0.18);
+  font-size: 0.7rem;
+  margin-top: 2px;
 }
 
 .sch-toolbar-label {
@@ -198,6 +213,14 @@
   background: rgba(255,255,255,0.04);
 }
 
+.sch-cell.filled {
+  background: rgba(59,130,246,0.1);
+}
+
+.sch-cell.filled:hover {
+  background: rgba(59,130,246,0.18);
+}
+
 .sch-cell.clip-target {
   background: rgba(59,130,246,0.06);
   cursor: copy;
@@ -205,14 +228,6 @@
 
 .sch-cell.clip-target:hover {
   background: rgba(59,130,246,0.12);
-}
-
-.sch-cell.filled {
-  background: rgba(59,130,246,0.1);
-}
-
-.sch-cell.filled:hover {
-  background: rgba(59,130,246,0.18);
 }
 
 .sch-cell-input {

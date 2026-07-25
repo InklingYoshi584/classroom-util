@@ -258,8 +258,11 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
               {!clipMode && (
                 <>
                   <span className="sch-toolbar-hint">点击格子直接编辑课程名</span>
-                  <button className="sch-toolbar-btn" onClick={handleEnterCopyMode}>复制</button>
-                  {pasteSlot && <button className="sch-toolbar-btn paste" onClick={handleEnterPasteMode}>粘贴已复制的内容</button>}
+                  <div className="sch-toolbar-btns">
+                    <button className="sch-toolbar-btn" onClick={handleEnterCopyMode} title="点击按钮后，再点击已填格子复制课程名">复制</button>
+                    {pasteSlot && <button className="sch-toolbar-btn paste" onClick={handleEnterPasteMode}>粘贴已复制的内容</button>}
+                  </div>
+                  <span className="sch-toolbar-sub">点击「复制」后，再点击已填课程格子即可复制</span>
                 </>
               )}
               {clipMode === 'copy' && (
