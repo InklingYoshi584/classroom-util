@@ -52,6 +52,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
   const [copiedFrom, setCopiedFrom] = useState<string | null>(null);
   const [clipMode, setClipMode] = useState<'copy' | 'paste' | null>(null); // day-period key
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   // Config step fields
   const [cfgPeriods, setCfgPeriods] = useState(8);
@@ -92,7 +93,8 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
     return times;
   };
 
-  const handleConfigSave = () => {
+  const handleConfigSave = async () => {
+    setSaveError('');
     const times = generateTimes(cfgPeriods, cfgDuration, cfgFirstStart);
     const pc: PeriodConfig = {
       periodsPerDay: cfgPeriods,
@@ -100,14 +102,20 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
       firstStart: cfgFirstStart,
       periodTimes: times,
     };
+    try {
+      const r = await fetch('/api/schedule/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ periodConfig: pc, sudo: sudoPassword }),
+      });
+      const d = await r.json();
+      if (!d.ok) { setSaveError(d.error || '权限不足，请在设置中输入 Sudo 密码'); return; }
+    } catch {
+      setSaveError('网络错误');
+      return;
+    }
     setPeriodConfig(pc);
     setStep('grid');
-    // Save to server
-    fetch('/api/schedule/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ periodConfig: pc, sudo: sudoPassword }),
-    }).catch(() => {});
   };
 
   const handlePinSubmit = async () => {
@@ -194,20 +202,29 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError('');
     try {
       if (periodConfig) {
-        await fetch('/api/schedule/config', {
+        const r1 = await fetch('/api/schedule/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ periodConfig, sudo: sudoPassword }),
         });
+        const d1 = await r1.json();
+        if (!d1.ok) { setSaveError(d1.error || '权限不足，请在设置中输入 Sudo 密码'); setSaving(false); return; }
       }
-      await fetch('/api/schedule/class', {
+      const r2 = await fetch('/api/schedule/class', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ class: classId, schedule: classSchedule, sudo: sudoPassword }),
       });
-    } catch {}
+      const d2 = await r2.json();
+      if (!d2.ok) { setSaveError(d2.error || '权限不足，请在设置中输入 Sudo 密码'); setSaving(false); return; }
+    } catch {
+      setSaveError('网络错误');
+      setSaving(false);
+      return;
+    }
     setSaving(false);
     onClose();
   };
@@ -248,6 +265,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
             <label>每天节数 <input type="number" min={1} max={12} value={cfgPeriods} onChange={e => setCfgPeriods(Number(e.target.value) || 1)} /></label>
             <label>每节课时长(分钟) <input type="number" min={10} max={120} value={cfgDuration} onChange={e => setCfgDuration(Number(e.target.value) || 10)} /></label>
             <label>第一节上课时间 <input type="text" placeholder="08:00" value={cfgFirstStart} onChange={e => setCfgFirstStart(e.target.value)} /></label>
+            {saveError && <div className="sch-pin-error">{saveError}</div>}
             <button className="sch-save-btn" onClick={handleConfigSave}>确认配置</button>
           </div>
         )}
@@ -332,6 +350,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
               </tbody>
             </table>
             <div className="sch-footer">
+              {saveError && <span className="sch-pin-error" style={{marginRight:'auto'}}>{saveError}</span>}
               <button className="sch-save-btn" onClick={handleSave} disabled={saving}>
                 {saving ? '保存中...' : '保存并推送到接收端'}
               </button>
