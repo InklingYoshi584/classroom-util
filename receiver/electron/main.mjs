@@ -215,7 +215,6 @@ function createSeatingChartWindow(layout) {
     alwaysOnTop: false,
     resizable: false,
     skipTaskbar: true,
-    transparent: true,
     title: '座位表',
     webPreferences: {
       nodeIntegration: false,
@@ -261,7 +260,6 @@ function createScheduleWindow(periodConfig, classSchedule) {
     alwaysOnTop: false,
     resizable: false,
     skipTaskbar: true,
-    transparent: true,
     title: '课表',
     webPreferences: {
       nodeIntegration: false,
