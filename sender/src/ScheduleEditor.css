@@ -1,5 +1,5 @@
 .sch-editor {
-  background: #111827;
+  background: #ffffff;
   border-radius: 12px;
   width: 90vw;
   max-width: 960px;
@@ -7,8 +7,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
-  color: #e5e7eb;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  color: #111827;
 }
 
 .sch-header {
@@ -16,7 +16,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid #e5e7eb;
   flex-shrink: 0;
 }
 
@@ -24,6 +24,7 @@
   font-size: 1.15rem;
   font-weight: 700;
   margin: 0;
+  color: #111827;
 }
 
 .sch-config {
@@ -36,10 +37,11 @@
 .sch-config h4 {
   font-size: 1.05rem;
   margin: 0 0 4px;
+  color: #111827;
 }
 
 .sch-pin-hint {
-  color: rgba(255,255,255,0.4);
+  color: #6b7280;
   font-size: 0.85rem;
   margin: 0 0 4px;
 }
@@ -47,9 +49,9 @@
 .sch-pin-input {
   padding: 8px 12px;
   border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.06);
-  color: #e5e7eb;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #111827;
   font-size: 0.95rem;
   width: 200px;
 }
@@ -64,15 +66,15 @@
   align-items: center;
   gap: 10px;
   font-size: 0.9rem;
-  color: rgba(255,255,255,0.6);
+  color: #6b7280;
 }
 
 .sch-config input {
   padding: 6px 10px;
   border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.06);
-  color: #e5e7eb;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #111827;
   font-size: 0.9rem;
   width: 80px;
   text-align: center;
@@ -86,7 +88,8 @@
 }
 
 .sch-toolbar {
-  background: rgba(255,255,255,0.03);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 8px 14px;
   margin-bottom: 10px;
@@ -99,7 +102,7 @@
 }
 
 .sch-toolbar-hint {
-  color: rgba(255,255,255,0.3);
+  color: #9ca3af;
   font-size: 0.8rem;
 }
 
@@ -112,46 +115,46 @@
 .sch-toolbar-sub {
   display: block;
   width: 100%;
-  color: rgba(255,255,255,0.18);
+  color: #9ca3af;
   font-size: 0.7rem;
   margin-top: 2px;
 }
 
 .sch-toolbar-label {
-  color: rgba(255,255,255,0.7);
+  color: #374151;
 }
 
 .sch-toolbar-label strong {
-  color: #93c5fd;
+  color: #3b82f6;
 }
 
 .sch-toolbar-btn {
   padding: 4px 14px;
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid #d1d5db;
   border-radius: 5px;
-  background: rgba(255,255,255,0.06);
-  color: #e5e7eb;
+  background: #ffffff;
+  color: #374151;
   font-size: 0.8rem;
   cursor: pointer;
 }
 
 .sch-toolbar-btn:hover {
-  background: rgba(255,255,255,0.12);
+  background: #f3f4f6;
 }
 
 .sch-toolbar-btn.paste {
-  background: rgba(59,130,246,0.2);
-  border-color: rgba(59,130,246,0.35);
-  color: #93c5fd;
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
 }
 
 .sch-toolbar-btn.paste:hover {
-  background: rgba(59,130,246,0.3);
+  background: #bfdbfe;
 }
 
 .sch-toolbar-btn.cancel {
-  border-color: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.4);
+  border-color: #e5e7eb;
+  color: #9ca3af;
 }
 
 .sch-grid {
@@ -163,9 +166,10 @@
 .sch-grid th {
   padding: 8px 4px;
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.4);
+  color: #9ca3af;
   font-weight: 600;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid #e5e7eb;
+  background: #fafbfc;
 }
 
 .sch-grid th:first-child {
@@ -184,9 +188,9 @@
   width: 44px;
   padding: 3px 4px;
   border-radius: 4px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
-  color: #9ca3af;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #6b7280;
   font-size: 0.75rem;
   text-align: center;
   font-family: monospace;
@@ -194,40 +198,40 @@
 
 .sch-time-input:focus {
   border-color: #3b82f6;
-  color: #e5e7eb;
+  color: #111827;
 }
 
 .sch-time-sep {
-  color: rgba(255,255,255,0.2);
+  color: #d1d5db;
   font-size: 0.7rem;
 }
 
 .sch-cell {
   padding: 4px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid #f3f4f6;
   cursor: pointer;
   min-height: 36px;
 }
 
 .sch-cell:hover {
-  background: rgba(255,255,255,0.04);
+  background: #f3f4f6;
 }
 
 .sch-cell.filled {
-  background: rgba(59,130,246,0.1);
+  background: #eff6ff;
 }
 
 .sch-cell.filled:hover {
-  background: rgba(59,130,246,0.18);
+  background: #dbeafe;
 }
 
 .sch-cell.clip-target {
-  background: rgba(59,130,246,0.06);
+  background: #f0f9ff;
   cursor: copy;
 }
 
 .sch-cell.clip-target:hover {
-  background: rgba(59,130,246,0.12);
+  background: #e0f2fe;
 }
 
 .sch-cell-input {
@@ -236,7 +240,7 @@
   border-radius: 4px;
   border: 1px solid transparent;
   background: transparent;
-  color: #93c5fd;
+  color: #1e40af;
   font-size: 0.8rem;
   text-align: center;
   font-weight: 600;
@@ -244,13 +248,13 @@
 
 .sch-cell-input:focus {
   border-color: #3b82f6;
-  background: rgba(255,255,255,0.04);
+  background: #ffffff;
   outline: none;
 }
 
 .sch-cell-hint {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.25);
+  color: #d1d5db;
 }
 
 .sch-cell-text {
@@ -261,17 +265,19 @@
   height: 100%;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #93c5fd;
+  color: #1e40af;
 }
 
 .sch-cell-text.empty {
-  color: rgba(255,255,255,0.12);
+  color: #d1d5db;
 }
 
 .sch-footer {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   padding: 12px 0 4px;
+  gap: 10px;
 }
 
 .sch-save-btn {

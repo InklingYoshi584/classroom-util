@@ -1,15 +1,14 @@
-/* ── Dark theme baseline for seating chart overlay ── */
 .seating-overlay {
-  background: #111827;
+  background: #ffffff;
   border-radius: 12px;
   width: 90vw;
   max-width: 1100px;
   height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
   overflow: hidden;
-  color: #e5e7eb;
+  color: #111827;
 }
 
 .seating-header {
@@ -17,14 +16,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid #e5e7eb;
   flex-shrink: 0;
 }
 
 .seating-header h3 {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #e5e7eb;
+  color: #111827;
   margin: 0;
 }
 
@@ -34,23 +33,23 @@
   overflow: hidden;
 }
 
-/* ── Left panel ── */
 .seating-left {
   width: 220px;
   flex-shrink: 0;
-  border-right: 1px solid rgba(255,255,255,0.08);
+  border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: #fafbfc;
 }
 
 .seating-search {
   margin: 12px;
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.06);
-  color: #e5e7eb;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
   font-size: 0.9rem;
   outline: none;
   flex-shrink: 0;
@@ -61,7 +60,7 @@
 }
 
 .seating-search::placeholder {
-  color: rgba(255,255,255,0.3);
+  color: #9ca3af;
 }
 
 .seating-student-list {
@@ -74,8 +73,9 @@
   padding: 8px 12px;
   margin: 2px 4px;
   border-radius: 6px;
-  background: rgba(255,255,255,0.05);
-  color: #e5e7eb;
+  background: #ffffff;
+  border: 1px solid #f3f4f6;
+  color: #374151;
   font-size: 0.9rem;
   cursor: grab;
   user-select: none;
@@ -83,22 +83,23 @@
 }
 
 .seating-student-item:hover {
-  background: rgba(255,255,255,0.12);
+  background: #f3f4f6;
+  border-color: #e5e7eb;
 }
 
 .seating-student-item.dragging {
   opacity: 0.4;
-  background: #3b82f6;
+  background: #dbeafe;
+  border-color: #93c5fd;
 }
 
 .seating-empty-hint {
-  color: rgba(255,255,255,0.25);
+  color: #9ca3af;
   font-size: 0.85rem;
   text-align: center;
   padding: 24px 8px;
 }
 
-/* ── Right panel ── */
 .seating-right {
   flex: 1;
   display: flex;
@@ -119,7 +120,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(255,255,255,0.5);
+  color: #6b7280;
   font-size: 0.85rem;
 }
 
@@ -127,9 +128,9 @@
   width: 52px;
   padding: 4px 8px;
   border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.08);
-  color: #e5e7eb;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
   font-size: 0.85rem;
   text-align: center;
   outline: none;
@@ -142,21 +143,20 @@
 .seating-clear-btn {
   margin-left: auto;
   padding: 5px 14px;
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  background: transparent;
-  color: rgba(255,255,255,0.45);
+  background: #ffffff;
+  color: #6b7280;
   font-size: 0.8rem;
   cursor: pointer;
 }
 
 .seating-clear-btn:hover {
-  background: rgba(239, 68, 68, 0.15);
+  background: #fef2f2;
   color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: #fecaca;
 }
 
-/* ── Grid ── */
 .seating-grid {
   flex: 1;
   display: grid;
@@ -167,45 +167,44 @@
 }
 
 .seating-cell {
-  background: rgba(255,255,255,0.05);
-  border: 1px dashed rgba(255,255,255,0.1);
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 48px;
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.25);
+  color: #d1d5db;
   transition: background 0.1s, border-color 0.1s;
   cursor: default;
 }
 
 .seating-cell.occupied {
-  background: rgba(59, 130, 246, 0.18);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #93c5fd;
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  color: #1e40af;
   font-weight: 600;
   cursor: pointer;
 }
 
 .seating-cell.occupied:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #fca5a5;
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
 }
 
 .seating-cell.drag-over {
-  background: rgba(59, 130, 246, 0.3);
+  background: #dbeafe;
   border-color: #3b82f6;
   border-style: solid;
 }
 
-/* ── Footer ── */
 .seating-footer {
   display: flex;
   justify-content: flex-end;
   padding: 12px 20px;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid #e5e7eb;
   flex-shrink: 0;
 }
 
