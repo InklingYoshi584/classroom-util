@@ -287,9 +287,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
             <label>每天节数 <input type="number" min={1} max={12} value={cfgPeriods} onChange={e => setCfgPeriods(Number(e.target.value) || 1)} /></label>
             <label>每节课时长(分钟) <input type="number" min={10} max={120} value={cfgDuration} onChange={e => setCfgDuration(Number(e.target.value) || 10)} /></label>
             <label>第一节上课时间 <input type="text" placeholder="08:00" value={cfgFirstStart} onChange={e => setCfgFirstStart(e.target.value)} /></label>
-            {!sudoPassword && (
-              <label>Sudo 密码 <input type="password" placeholder="输入 Sudo 密码" value={localSudo} onChange={e => setLocalSudo(e.target.value)} /></label>
-            )}
+            <label>Sudo 密码 <input type="password" value={localSudo} onChange={e => setLocalSudo(e.target.value)} /></label>
             {saveError && <div className="sch-pin-error">{saveError}</div>}
             <button className="sch-save-btn" onClick={handleConfigSave}>确认配置</button>
           </div>
