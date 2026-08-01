@@ -70,7 +70,15 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
         if (d.periodConfig) {
           setPeriodConfig(d.periodConfig);
           const sc = d.classSchedules?.[classId];
-          if (sc) setClassSchedule(sc);
+          if (sc) {
+            setClassSchedule({
+              mon: sc.mon || [],
+              tue: sc.tue || [],
+              wed: sc.wed || [],
+              thu: sc.thu || [],
+              fri: sc.fri || [],
+            });
+          }
           setStep('grid');
         } else {
           // No config — check if PIN required
@@ -165,10 +173,10 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
     }
     setPeriodConfig({ ...periodConfig, periodTimes: times });
   };
-
   const handleCourseChange = (day: string, periodIdx: number, value: string) => {
     setClassSchedule(prev => {
-      const arr = [...(prev[day as keyof ClassSchedule] as (string | null)[])];
+      const cur = (prev[day as keyof ClassSchedule] as (string | null)[]) || [];
+      const arr = [...cur];
       while (arr.length <= periodIdx) arr.push(null);
       arr[periodIdx] = value || null;
       return { ...prev, [day]: arr };
@@ -177,7 +185,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
 
   const handleCellClick = (day: string, periodIdx: number) => {
     if (clipMode === 'copy') {
-      const arr = classSchedule[day as keyof ClassSchedule] as (string | null)[];
+      const arr = (classSchedule[day as keyof ClassSchedule] as (string | null)[]) || [];
       const name = arr[periodIdx] || '';
       if (name) {
         setPasteSlot(name);
@@ -190,8 +198,8 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
       if (!swapSource) {
         setSwapSource({ day, periodIdx });
       } else if (swapSource.day !== day || swapSource.periodIdx !== periodIdx) {
-        const arr1 = classSchedule[swapSource.day as keyof ClassSchedule] as (string | null)[];
-        const arr2 = classSchedule[day as keyof ClassSchedule] as (string | null)[];
+        const arr1 = (classSchedule[swapSource.day as keyof ClassSchedule] as (string | null)[]) || [];
+        const arr2 = (classSchedule[day as keyof ClassSchedule] as (string | null)[]) || [];
         const val1 = arr1[swapSource.periodIdx] || null;
         const val2 = arr2[periodIdx] || null;
         handleCourseChange(swapSource.day, swapSource.periodIdx, val2 || '');
