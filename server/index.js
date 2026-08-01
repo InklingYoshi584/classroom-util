@@ -285,10 +285,7 @@ app.get('/api/schedule/class', (req, res) => {
 });
 
 app.post('/api/schedule/class', (req, res) => {
-  const { class: cls, schedule: sched, sudo } = req.body || {};
-  if (sudo !== SUDO_PASSWORD) {
-    return res.status(403).json({ ok: false, error: 'Sudo 密码错误' });
-  }
+  const { class: cls, schedule: sched } = req.body || {};
   if (!cls || typeof sched !== 'object') {
     return res.status(400).json({ ok: false, error: '参数错误' });
   }

@@ -238,10 +238,10 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
       const r2 = await fetch('/api/schedule/class', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ class: classId, schedule: classSchedule, sudo: localSudo }),
+        body: JSON.stringify({ class: classId, schedule: classSchedule }),
       });
       const d2 = await r2.json();
-      if (!d2.ok) { setSaveError(d2.error || '权限不足，请在设置中输入 Sudo 密码'); setSaving(false); return; }
+      if (!d2.ok) { setSaveError(d2.error || '保存失败'); setSaving(false); return; }
     } catch {
       setSaveError('网络错误');
       setSaving(false);
