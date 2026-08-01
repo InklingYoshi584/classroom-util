@@ -17,7 +17,6 @@ export function ReceiverPage() {
   const [ttsSettings, setTtsSettings] = useState<TtsSettings>(() => loadTtsSettings());
   const [showSettings, setShowSettings] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [pinRequired, setPinRequired] = useState(false);
   const [pinVerified, setPinVerified] = useState(false);
   const [gatePinInput, setGatePinInput] = useState('');
@@ -193,16 +192,6 @@ export function ReceiverPage() {
     electronApi.saveConfig({ classId: trimmed, serverHost: serverHost.trim() || undefined });
     mqttRef.current?.connect(trimmed, serverHost.trim() || undefined);
   }, [classId, serverHost]);
-
-  const handleEnableAudio = async () => {
-    setAudioUnlocked(true);
-    setTtsSettings((prev) => {
-      const next = { ...prev, enabled: true };
-      saveTtsSettings(next);
-      return next;
-    });
-    await ttsEngine.speak('音频已启用', { ...ttsSettingsRef.current, enabled: true, repeat: 1 });
-  };
 
   const handleDismiss = () => {
     clearTimeout(popupTimerRef.current);
@@ -388,11 +377,6 @@ export function ReceiverPage() {
           )}
 
           <div className="top-actions">
-            {!audioUnlocked && schedule.length === 0 && (
-              <button className="audio-enable-btn" onClick={handleEnableAudio}>
-                启用语音
-              </button>
-            )}
             <button className="settings-toggle-btn" onClick={handleToggleSettings}>
               设置
             </button>
