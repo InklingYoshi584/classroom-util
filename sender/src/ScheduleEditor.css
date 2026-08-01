@@ -152,6 +152,16 @@
   background: #bfdbfe;
 }
 
+.sch-toolbar-btn.reconfig {
+  border-color: #fbbf24;
+  color: #b45309;
+  background: #fffbeb;
+}
+
+.sch-toolbar-btn.reconfig:hover {
+  background: #fef3c7;
+}
+
 .sch-toolbar-btn.cancel {
   border-color: #e5e7eb;
   color: #9ca3af;

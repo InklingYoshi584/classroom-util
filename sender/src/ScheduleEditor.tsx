@@ -302,7 +302,8 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
         {step === 'grid' && periodConfig && (
           <div className="sch-grid-wrap">
             <div className="sch-toolbar">
-              {!clipMode && (
+              <button className="sch-toolbar-btn reconfig" onClick={() => { setPeriodConfig(null); setStep('config'); setSaveError(''); }} title="重新设置每天节数、每节时长和上课时间（需 Sudo 密码）">重新配置时间</button>
+               {!clipMode && (
                 <>
                   <span className="sch-toolbar-hint">点击格子直接编辑课程名</span>
                   <div className="sch-toolbar-btns">
