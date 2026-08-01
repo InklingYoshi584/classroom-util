@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { getPinStatus, verifyPin } from './lib/pin';
 import './ScheduleEditor.css';
 
 interface PeriodConfig {
@@ -41,9 +40,8 @@ function addMinutes(t: string, mins: number) {
 
 export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState<'pin' | 'config' | 'grid'>('config');
+  const [step, setStep] = useState<'sudo-gate' | 'config' | 'grid'>('sudo-gate');
   const [pinInput, setPinInput] = useState('');
-  const [pinError, setPinError] = useState('');
   const [periodConfig, setPeriodConfig] = useState<PeriodConfig | null>(null);
   const [classSchedule, setClassSchedule] = useState<ClassSchedule>(() => ({
     mon: [], tue: [], wed: [], thu: [], fri: [],
@@ -56,7 +54,9 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [localSudo, setLocalSudo] = useState(sudoPassword);
-  const sudoRef = useRef<HTMLInputElement>(null);
+  const [sudoVerified, setSudoVerified] = useState(false);
+  const [sudoGateError, setSudoGateError] = useState('');
+  const sudoGateRef = useRef<HTMLInputElement>(null);
 
   // Config step fields
   const [cfgPeriods, setCfgPeriods] = useState(8);
@@ -66,7 +66,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
   useEffect(() => {
     fetch('/api/schedule/config')
       .then(r => r.json())
-      .then(async d => {
+      .then(d => {
         if (d.periodConfig) {
           setPeriodConfig(d.periodConfig);
           const sc = d.classSchedules?.[classId];
@@ -81,13 +81,8 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
           }
           setStep('grid');
         } else {
-          // No config — check if PIN required
-          const ps = await getPinStatus();
-          if (ps === 'set') {
-            setStep('pin');
-          } else {
-            setStep('config');
-          }
+          // No config — need sudo to create it
+          setStep('sudo-gate');
         }
         setLoading(false);
       })
@@ -105,6 +100,27 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
     return times;
   };
 
+  const handleSudoGateSubmit = async () => {
+    const pass = sudoGateRef.current?.value || '';
+    try {
+      const r = await fetch('/api/sudo/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sudo: pass }),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        setLocalSudo(pass);
+        setSudoVerified(true);
+        setStep('config');
+      } else {
+        setSudoGateError('Sudo 密码错误');
+      }
+    } catch {
+      setSudoGateError('网络错误');
+    }
+  };
+
   const handleConfigSave = async () => {
     setSaveError('');
     const times = generateTimes(cfgPeriods, cfgDuration, cfgFirstStart);
@@ -115,11 +131,10 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
       periodTimes: times,
     };
     try {
-      const pass = sudoRef.current?.value || localSudo;
       const r = await fetch('/api/schedule/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ periodConfig: pc, sudo: pass }),
+        body: JSON.stringify({ periodConfig: pc, sudo: localSudo }),
       });
       const d = await r.json();
       if (!d.ok) { setSaveError(d.error || '权限不足，请在设置中输入 Sudo 密码'); return; }
@@ -129,16 +144,6 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
     }
     setPeriodConfig(pc);
     setStep('grid');
-  };
-
-  const handlePinSubmit = async () => {
-    const result = await verifyPin('', pinInput);
-    if (result === 'ok') {
-      setStep('config');
-      setPinError('');
-    } else {
-      setPinError('PIN 错误');
-    }
   };
 
   const handleTimeChange = (idx: number, field: 'start' | 'end', value: string) => {
@@ -277,21 +282,21 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
           <button className="close-btn" onClick={onClose}>&#10005;</button>
         </div>
 
-        {step === 'pin' && (
+        {step === 'sudo-gate' && (
           <div className="sch-config">
-            <h4>需要 PIN 验证</h4>
-            <p className="sch-pin-hint">请输入 PIN 以配置课表</p>
+            <h4>需要 Sudo 密码</h4>
+            <p className="sch-pin-hint">首次配置课表需要 Sudo 密码</p>
             <input
               type="password"
-              placeholder="输入 PIN"
-              value={pinInput}
-              onChange={e => { setPinInput(e.target.value); setPinError(''); }}
-              onKeyDown={e => e.key === 'Enter' && handlePinSubmit()}
+              placeholder="输入 Sudo 密码"
+              ref={sudoGateRef}
+              onChange={() => setSudoGateError('')}
+              onKeyDown={e => e.key === 'Enter' && handleSudoGateSubmit()}
               className="sch-pin-input"
               autoFocus
             />
-            {pinError && <div className="sch-pin-error">{pinError}</div>}
-            <button className="sch-save-btn" onClick={handlePinSubmit}>确认</button>
+            {sudoGateError && <div className="sch-pin-error">{sudoGateError}</div>}
+            <button className="sch-save-btn" onClick={handleSudoGateSubmit}>确认</button>
           </div>
         )}
 
@@ -301,7 +306,6 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
             <label>每天节数 <input type="number" min={1} max={12} value={cfgPeriods} onChange={e => setCfgPeriods(Number(e.target.value) || 1)} /></label>
             <label>每节课时长(分钟) <input type="number" min={10} max={120} value={cfgDuration} onChange={e => setCfgDuration(Number(e.target.value) || 10)} /></label>
             <label>第一节上课时间 <input type="text" placeholder="08:00" value={cfgFirstStart} onChange={e => setCfgFirstStart(e.target.value)} /></label>
-            <label>Sudo 密码 <input type="password" value={localSudo} onChange={e => setLocalSudo(e.target.value)} ref={sudoRef} /></label>
             {saveError && <div className="sch-pin-error">{saveError}</div>}
             <button className="sch-save-btn" onClick={handleConfigSave}>确认配置</button>
           </div>
@@ -310,7 +314,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
         {step === 'grid' && periodConfig && (
           <div className="sch-grid-wrap">
             <div className="sch-toolbar">
-              <button className="sch-toolbar-btn reconfig" onClick={() => { setPeriodConfig(null); setStep('config'); setSaveError(''); }} title="重新设置每天节数、每节时长和上课时间（需 Sudo 密码）">重新配置时间</button>
+              <button className="sch-toolbar-btn reconfig" onClick={() => { setPeriodConfig(null); setStep('sudo-gate'); setSaveError(''); setSudoGateError(''); }} title="重新设置每天节数、每节时长和上课时间（需 Sudo 密码）">重新配置时间</button>
                {!clipMode && (
                 <>
                   <span className="sch-toolbar-hint">点击格子直接编辑课程名</span>
