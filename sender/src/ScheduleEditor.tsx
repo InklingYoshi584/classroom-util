@@ -53,6 +53,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
   const [clipMode, setClipMode] = useState<'copy' | 'paste' | null>(null); // day-period key
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [localSudo, setLocalSudo] = useState(sudoPassword);
 
   // Config step fields
   const [cfgPeriods, setCfgPeriods] = useState(8);
@@ -106,7 +107,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
       const r = await fetch('/api/schedule/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ periodConfig: pc, sudo: sudoPassword }),
+        body: JSON.stringify({ periodConfig: pc, sudo: localSudo }),
       });
       const d = await r.json();
       if (!d.ok) { setSaveError(d.error || '权限不足，请在设置中输入 Sudo 密码'); return; }
@@ -208,7 +209,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
         const r1 = await fetch('/api/schedule/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ periodConfig, sudo: sudoPassword }),
+          body: JSON.stringify({ periodConfig, sudo: localSudo }),
         });
         const d1 = await r1.json();
         if (!d1.ok) { setSaveError(d1.error || '权限不足，请在设置中输入 Sudo 密码'); setSaving(false); return; }
@@ -216,7 +217,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
       const r2 = await fetch('/api/schedule/class', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ class: classId, schedule: classSchedule, sudo: sudoPassword }),
+        body: JSON.stringify({ class: classId, schedule: classSchedule, sudo: localSudo }),
       });
       const d2 = await r2.json();
       if (!d2.ok) { setSaveError(d2.error || '权限不足，请在设置中输入 Sudo 密码'); setSaving(false); return; }
@@ -265,6 +266,9 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
             <label>每天节数 <input type="number" min={1} max={12} value={cfgPeriods} onChange={e => setCfgPeriods(Number(e.target.value) || 1)} /></label>
             <label>每节课时长(分钟) <input type="number" min={10} max={120} value={cfgDuration} onChange={e => setCfgDuration(Number(e.target.value) || 10)} /></label>
             <label>第一节上课时间 <input type="text" placeholder="08:00" value={cfgFirstStart} onChange={e => setCfgFirstStart(e.target.value)} /></label>
+            {!localSudo && (
+              <label>Sudo 密码 <input type="password" placeholder="默认 Yoshi1024" value={localSudo} onChange={e => setLocalSudo(e.target.value)} /></label>
+            )}
             {saveError && <div className="sch-pin-error">{saveError}</div>}
             <button className="sch-save-btn" onClick={handleConfigSave}>确认配置</button>
           </div>
