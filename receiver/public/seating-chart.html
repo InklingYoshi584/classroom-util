@@ -7,122 +7,75 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
-    width: 100%; height: 100%;
-    overflow: hidden;
+    width: 100%; height: 100%; overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     background: transparent;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-app-region: drag;
+    user-select: none; -webkit-user-select: none;
   }
-
   body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%; height: 100%;
-    margin: 0;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-app-region: drag;
   }
-
   #container {
-    display: flex;
-    flex-direction: column;
-    background: #1f2937;
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 16px;
-    padding: 12px 14px;
+    display: flex; flex-direction: column;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 10px 14px;
     min-width: 200px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-    -webkit-app-region: drag;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    -webkit-app-region: no-drag;
   }
-
   #title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #d1d5db;
-    text-align: center;
-    margin-bottom: 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    font-size: 13px; font-weight: 700; color: #374151;
+    text-align: center; margin-bottom: 6px; padding-bottom: 4px;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex; align-items: center; justify-content: space-between;
     -webkit-app-region: drag;
   }
-
   #closeBtn {
-    width: 22px; height: 22px;
-    border: none;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.12);
-    color: #9ca3af;
-    font-size: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    width: 20px; height: 20px; border: none; border-radius: 50%;
+    background: #e5e7eb; color: #6b7280; font-size: 11px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
     -webkit-app-region: no-drag;
   }
-
-  #closeBtn:hover {
-    background: rgba(239, 68, 68, 0.5);
-    color: #fff;
-  }
-
+  #closeBtn:hover { background: #ef4444; color: #fff; }
   #grid {
-    display: grid;
-    gap: 3px;
+    display: grid; gap: 3px;
     -webkit-app-region: no-drag;
   }
-
   .seat-cell {
-    width: 40px;
-    height: 28px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.06);
+    width: 38px; height: 26px;
+    background: #f3f4f6; border: 1px solid #e5e7eb;
     border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: #6b7280;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: #9ca3af;
   }
-
   .seat-cell.occupied {
-    background: rgba(59, 130, 246, 0.25);
-    border: 1px solid rgba(59, 130, 246, 0.4);
-    color: #bfdbfe;
-    font-weight: 600;
+    background: #dbeafe; border-color: #93c5fd;
+    color: #1e40af; font-weight: 600;
   }
 </style>
 </head>
 <body>
-
 <div id="container">
   <div id="title">
-    <span class="label">座位表</span>
-    <button id="closeBtn" title="关闭">&#10005;</button>
+    <span>座位表</span>
+    <button id="closeBtn">&times;</button>
   </div>
   <div id="grid"></div>
 </div>
-
 <script>
 (function() {
   var gridEl = document.getElementById('grid');
   var closeBtn = document.getElementById('closeBtn');
-  var currentLayout = null;
-
   closeBtn.addEventListener('click', function() {
     if (window.electronAPI) window.electronAPI.closeSeatingChart();
   });
-
   function renderSeating(layout) {
     if (!layout) return;
-    currentLayout = layout;
     gridEl.style.gridTemplateColumns = 'repeat(' + layout.cols + ', 1fr)';
     gridEl.innerHTML = '';
-
     var seats = layout.seats || {};
     for (var r = 0; r < layout.rows; r++) {
       for (var c = 0; c < layout.cols; c++) {
@@ -136,12 +89,8 @@
       }
     }
   }
-
-  // IPC listener for updates
   if (window.electronAPI && window.electronAPI.onSeatingUpdate) {
-    window.electronAPI.onSeatingUpdate(function(layout) {
-      renderSeating(layout);
-    });
+    window.electronAPI.onSeatingUpdate(function(layout) { renderSeating(layout); });
   }
 })();
 </script>
