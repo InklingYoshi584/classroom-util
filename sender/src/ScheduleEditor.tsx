@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getPinStatus, verifyPin } from './lib/pin';
 import './ScheduleEditor.css';
 
@@ -56,6 +56,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [localSudo, setLocalSudo] = useState(sudoPassword);
+  const sudoRef = useRef<HTMLInputElement>(null);
 
   // Config step fields
   const [cfgPeriods, setCfgPeriods] = useState(8);
@@ -106,10 +107,11 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
       periodTimes: times,
     };
     try {
+      const pass = sudoRef.current?.value || localSudo;
       const r = await fetch('/api/schedule/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ periodConfig: pc, sudo: localSudo }),
+        body: JSON.stringify({ periodConfig: pc, sudo: pass }),
       });
       const d = await r.json();
       if (!d.ok) { setSaveError(d.error || '权限不足，请在设置中输入 Sudo 密码'); return; }
@@ -291,7 +293,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
             <label>每天节数 <input type="number" min={1} max={12} value={cfgPeriods} onChange={e => setCfgPeriods(Number(e.target.value) || 1)} /></label>
             <label>每节课时长(分钟) <input type="number" min={10} max={120} value={cfgDuration} onChange={e => setCfgDuration(Number(e.target.value) || 10)} /></label>
             <label>第一节上课时间 <input type="text" placeholder="08:00" value={cfgFirstStart} onChange={e => setCfgFirstStart(e.target.value)} /></label>
-            <label>Sudo 密码 <input type="password" value={localSudo} onChange={e => setLocalSudo(e.target.value)} /></label>
+            <label>Sudo 密码 <input type="password" value={localSudo} onChange={e => setLocalSudo(e.target.value)} ref={sudoRef} /></label>
             {saveError && <div className="sch-pin-error">{saveError}</div>}
             <button className="sch-save-btn" onClick={handleConfigSave}>确认配置</button>
           </div>
