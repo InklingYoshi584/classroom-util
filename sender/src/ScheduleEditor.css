@@ -234,6 +234,20 @@
   background: #e0f2fe;
 }
 
+.sch-cell.swap-target {
+  background: #fef9c3;
+  cursor: pointer;
+}
+
+.sch-cell.swap-target:hover {
+  background: #fef08a;
+}
+
+.sch-cell.swap-source {
+  background: #fde68a;
+  border: 2px solid #f59e0b;
+}
+
 .sch-cell-input {
   width: 100%;
   padding: 5px 6px;

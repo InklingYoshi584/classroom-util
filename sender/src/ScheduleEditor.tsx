@@ -50,7 +50,8 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
   }));
   const [pasteSlot, setPasteSlot] = useState<string | null>(null);
   const [copiedFrom, setCopiedFrom] = useState<string | null>(null);
-  const [clipMode, setClipMode] = useState<'copy' | 'paste' | null>(null); // day-period key
+  const [clipMode, setClipMode] = useState<'copy' | 'paste' | 'swap' | null>(null);
+  const [swapSource, setSwapSource] = useState<{ day: string; periodIdx: number } | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [localSudo, setLocalSudo] = useState(sudoPassword);
@@ -182,6 +183,20 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
       }
     } else if (clipMode === 'paste' && pasteSlot) {
       handleCourseChange(day, periodIdx, pasteSlot);
+    } else if (clipMode === 'swap') {
+      if (!swapSource) {
+        setSwapSource({ day, periodIdx });
+      } else if (swapSource.day !== day || swapSource.periodIdx !== periodIdx) {
+        const arr1 = classSchedule[swapSource.day as keyof ClassSchedule] as (string | null)[];
+        const arr2 = classSchedule[day as keyof ClassSchedule] as (string | null)[];
+        const val1 = arr1[swapSource.periodIdx] || null;
+        const val2 = arr2[periodIdx] || null;
+        handleCourseChange(swapSource.day, swapSource.periodIdx, val2 || '');
+        handleCourseChange(day, periodIdx, val1 || '');
+        setSwapSource(null);
+      } else {
+        setSwapSource(null);
+      }
     }
   };
 
@@ -199,6 +214,12 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
     setClipMode(null);
     setPasteSlot(null);
     setCopiedFrom(null);
+    setSwapSource(null);
+  };
+
+  const handleEnterSwapMode = () => {
+    setClipMode('swap');
+    setSwapSource(null);
   };
 
   const handleSave = async () => {
@@ -281,10 +302,10 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
                 <>
                   <span className="sch-toolbar-hint">点击格子直接编辑课程名</span>
                   <div className="sch-toolbar-btns">
-                    <button className="sch-toolbar-btn" onClick={handleEnterCopyMode} title="点击按钮后，再点击已填格子复制课程名">复制</button>
+                    <button className="sch-toolbar-btn" onClick={handleEnterCopyMode} title="复制课程名到其他格子">复制</button>
+                    <button className="sch-toolbar-btn" onClick={handleEnterSwapMode}>换课</button>
                     {pasteSlot && <button className="sch-toolbar-btn paste" onClick={handleEnterPasteMode}>粘贴已复制的内容</button>}
                   </div>
-                  <span className="sch-toolbar-sub">点击「复制」后，再点击已填课程格子即可复制</span>
                 </>
               )}
               {clipMode === 'copy' && (
@@ -296,6 +317,14 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
               {clipMode === 'paste' && (
                 <>
                   <span className="sch-toolbar-label">粘贴模式 — 已复制 <strong>{pasteSlot}</strong>，点击任意格子粘贴</span>
+                  <button className="sch-toolbar-btn cancel" onClick={handleCancelClipMode}>取消</button>
+                </>
+              )}
+              {clipMode === 'swap' && (
+                <>
+                  <span className="sch-toolbar-label">
+                    {swapSource ? `已选择课程，点击另一个格子进行互换` : `换课模式 — 点击第一个课程格子`}
+                  </span>
                   <button className="sch-toolbar-btn cancel" onClick={handleCancelClipMode}>取消</button>
                 </>
               )}
@@ -329,10 +358,12 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
                       const arr = (classSchedule[d] as (string | null)[]) || [];
                       const name = arr[i] || '';
                       const isClipTarget = clipMode === 'copy' || (clipMode === 'paste' && !!pasteSlot);
+                      const isSwapTarget = clipMode === 'swap';
+                      const isSwapSource = isSwapTarget && swapSource?.day === d && swapSource?.periodIdx === i;
                       return (
                         <td
                           key={d}
-                          className={`sch-cell ${name ? 'filled' : ''} ${isClipTarget ? 'clip-target' : ''}`}
+                          className={`sch-cell ${name ? 'filled' : ''} ${isClipTarget ? 'clip-target' : ''} ${isSwapTarget ? 'swap-target' : ''} ${isSwapSource ? 'swap-source' : ''}`}
                           onClick={() => handleCellClick(d, i)}
                         >
                           {clipMode ? (
