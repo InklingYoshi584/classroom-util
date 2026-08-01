@@ -52,6 +52,7 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
   const [copiedFrom, setCopiedFrom] = useState<string | null>(null);
   const [clipMode, setClipMode] = useState<'copy' | 'paste' | 'swap' | null>(null);
   const [swapSource, setSwapSource] = useState<{ day: string; periodIdx: number } | null>(null);
+  const [swappedCells, setSwappedCells] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [localSudo, setLocalSudo] = useState(sudoPassword);
@@ -193,6 +194,9 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
         const val2 = arr2[periodIdx] || null;
         handleCourseChange(swapSource.day, swapSource.periodIdx, val2 || '');
         handleCourseChange(day, periodIdx, val1 || '');
+        const key1 = `${swapSource.day}-${swapSource.periodIdx}`;
+        const key2 = `${day}-${periodIdx}`;
+        setSwappedCells(new Set([key1, key2]));
         setSwapSource(null);
       } else {
         setSwapSource(null);
@@ -358,10 +362,11 @@ export function ScheduleEditor({ classId, sudoPassword, onClose }: Props) {
                       const isClipTarget = clipMode === 'copy' || (clipMode === 'paste' && !!pasteSlot);
                       const isSwapTarget = clipMode === 'swap';
                       const isSwapSource = isSwapTarget && swapSource?.day === d && swapSource?.periodIdx === i;
+                      const isSwapped = swappedCells.has(`${d}-${i}`);
                       return (
                         <td
                           key={d}
-                          className={`sch-cell ${name ? 'filled' : ''} ${isClipTarget ? 'clip-target' : ''} ${isSwapTarget ? 'swap-target' : ''} ${isSwapSource ? 'swap-source' : ''}`}
+                          className={`sch-cell ${name ? 'filled' : ''} ${isClipTarget ? 'clip-target' : ''} ${isSwapTarget ? 'swap-target' : ''} ${isSwapSource ? 'swap-source' : ''} ${isSwapped ? 'swapped' : ''}`}
                           onClick={() => handleCellClick(d, i)}
                         >
                           {clipMode ? (
